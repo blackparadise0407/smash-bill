@@ -287,7 +287,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                   className="border-[3px] border-black bg-[#ff5fb7] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60"
                   onClick={() => removeVote(event.id)}
                 >
-                  Remove all votes from this event
+                  Remove all votes
                 </button>
                 {device?.is_admin ? (
                   <>
