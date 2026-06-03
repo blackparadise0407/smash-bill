@@ -17,23 +17,63 @@ type EventItem = {
   name: string;
   choices: string[];
   description: string | null;
+  event_date: string;
   voter_count: number;
   has_voted: boolean;
   vote_breakdown: VoteBreakdown[];
 };
 
+type PaginationState = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
 const DEFAULT_CHOICES = ["8h-10h", "9h-11h"];
+const EVENT_PAGE_SIZE = 5;
+
+const DEFAULT_PAGINATION: PaginationState = {
+  page: 1,
+  pageSize: EVENT_PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+};
+
+function getTodayDateValue() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatEventDate(eventDate: string) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${eventDate}T00:00:00Z`));
+}
 
 export default function AdminEventsCreator() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [choicesText, setChoicesText] = useState(DEFAULT_CHOICES.join("\n"));
   const [message, setMessage] = useState<string | null>(null);
+  const [pagination, setPagination] =
+    useState<PaginationState>(DEFAULT_PAGINATION);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
-    const response = await fetch("/api/event", { cache: "no-store" });
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(EVENT_PAGE_SIZE),
+    });
+    const response = await fetch(`/api/event?${params}`, { cache: "no-store" });
     const data = await response.json();
 
     if (!response.ok) {
@@ -43,12 +83,17 @@ export default function AdminEventsCreator() {
     }
 
     setEvents(data.events ?? []);
+    setPagination(data.pagination ?? DEFAULT_PAGINATION);
     setIsLoading(false);
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  function goToPage(nextPage: number) {
+    setPage(Math.max(1, Math.min(nextPage, pagination.totalPages)));
+  }
 
   function createEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,6 +112,7 @@ export default function AdminEventsCreator() {
           name: String(formData.get("name") ?? "").trim(),
           description:
             String(formData.get("description") ?? "").trim() || undefined,
+          eventDate: String(formData.get("eventDate") ?? ""),
           choices,
         }),
       });
@@ -80,7 +126,12 @@ export default function AdminEventsCreator() {
       form.reset();
       setChoicesText(DEFAULT_CHOICES.join("\n"));
       setMessage(`Event created: ${data.event.name}`);
-      await loadEvents();
+
+      if (page === 1) {
+        await loadEvents();
+      } else {
+        setPage(1);
+      }
     });
   }
 
@@ -104,6 +155,17 @@ export default function AdminEventsCreator() {
               minLength={1}
               maxLength={160}
               placeholder="Example: Tuesday badminton · 19:00-21:00"
+              className="brutal-input w-full px-4 py-3 text-lg font-bold"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block font-black uppercase">Event date</span>
+            <input
+              name="eventDate"
+              type="date"
+              required
+              defaultValue={getTodayDateValue()}
               className="brutal-input w-full px-4 py-3 text-lg font-bold"
             />
           </label>
@@ -187,6 +249,9 @@ export default function AdminEventsCreator() {
           <article key={event.id} className="brutal-card bg-[#fff7e6] p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
+                <p className="mb-2 w-fit border-[3px] border-black bg-[#7dff7a] px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111]">
+                  {formatEventDate(event.event_date)}
+                </p>
                 <h3 className="text-2xl font-black">{event.name}</h3>
                 {event.description ? (
                   <p className="mt-2 font-bold">{event.description}</p>
@@ -253,6 +318,36 @@ export default function AdminEventsCreator() {
             </div>
           </article>
         ))}
+
+        {events.length > 0 ? (
+          <nav
+            className="brutal-card flex flex-wrap items-center justify-between gap-3 bg-white p-4"
+            aria-label="Admin event pagination"
+          >
+            <p className="font-black uppercase">
+              Page {pagination.page} of {pagination.totalPages} ·{" "}
+              {pagination.totalItems} events
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={!pagination.hasPreviousPage || isLoading}
+                className="border-[3px] border-black bg-[#5dc9ff] px-4 py-2 font-black shadow-[4px_4px_0_#111] disabled:opacity-50"
+                onClick={() => goToPage(page - 1)}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={!pagination.hasNextPage || isLoading}
+                className="border-[3px] border-black bg-[#7dff7a] px-4 py-2 font-black shadow-[4px_4px_0_#111] disabled:opacity-50"
+                onClick={() => goToPage(page + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </nav>
+        ) : null}
       </div>
     </section>
   );
