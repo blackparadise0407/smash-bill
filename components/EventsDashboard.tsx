@@ -234,7 +234,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                     return (
                       <button
                         key={`${choice}-${choiceIndex}`}
-                        disabled={isPending}
+                        disabled={isPending || eventExpired}
                         className={`border-[3px] border-black px-4 py-3 text-left text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60 ${
                           hasVotedChoice ? "bg-[#7dff7a]" : "bg-[#5dc9ff]"
                         }`}
