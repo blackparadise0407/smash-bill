@@ -549,6 +549,52 @@ export default function BillingClient({ eventId }: Props) {
     });
   }
 
+  function updatePaymentStatus(username: string, paid: boolean) {
+    if (finalizedDebts.length === 0) {
+      setMessage("Finalize the invoice before marking payments as paid.");
+      return;
+    }
+
+    const status: InvoiceStatus = paid ? "PAID" : "UNPAID";
+
+    startTransition(async () => {
+      const response = await fetch(`/api/event/${eventId}/invoice`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, status }),
+      });
+      const data = await response.json();
+
+      setMessage(
+        data.message ??
+          (response.ok
+            ? "Payment status updated."
+            : "Unable to update payment status."),
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      setFinalizedDebts((debts) =>
+        debts.map((debt) =>
+          debt.username === username
+            ? {
+                ...debt,
+                totalDebt: data.debt?.totalDebt ?? debt.totalDebt,
+                status: data.debt?.status ?? status,
+              }
+            : debt,
+        ),
+      );
+      setEvent((currentEvent) =>
+        currentEvent && data.eventStatus
+          ? { ...currentEvent, status: data.eventStatus }
+          : currentEvent,
+      );
+    });
+  }
+
   if (isLoading) {
     return (
       <section className="brutal-card bg-[#fff7e6] p-6">
@@ -667,7 +713,7 @@ export default function BillingClient({ eventId }: Props) {
         <div className="mt-6 space-y-3">
           {calculatedCurrentGroup.length === 0 ? (
             <p className="border-[3px] border-black bg-[#ff9f1c] p-4 font-black shadow-[4px_4px_0_#111]">
-              This event has no "Participating" voters yet, so billing cannot be
+              This event has no &quot;Participating&quot; voters yet, so billing cannot be
               created.
             </p>
           ) : (
@@ -717,10 +763,16 @@ export default function BillingClient({ eventId }: Props) {
         <h2 className="text-3xl font-black">
           {finalizedDebts.length > 0 ? "Final invoice" : "Estimated summary"}
         </h2>
+        {finalizedDebts.length === 0 ? (
+          <p className="mt-3 font-bold">
+            Finalize this invoice before marking participant payments as paid.
+          </p>
+        ) : null}
         <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[480px] border-[3px] border-black bg-white text-left font-bold">
+          <table className="w-full min-w-[560px] border-[3px] border-black bg-white text-left font-bold">
             <thead className="bg-[#5dc9ff]">
               <tr>
+                <th className="border-[3px] border-black p-3">Paid</th>
                 <th className="border-[3px] border-black p-3">Participant</th>
                 <th className="border-[3px] border-black p-3">Total</th>
                 <th className="border-[3px] border-black p-3">Status</th>
@@ -730,13 +782,39 @@ export default function BillingClient({ eventId }: Props) {
               {finalSummary.map((row) => (
                 <tr key={row.username}>
                   <td className="border-[3px] border-black p-3">
+                    <label className="flex w-fit items-center gap-2 font-black uppercase">
+                      <input
+                        type="checkbox"
+                        checked={row.status === "PAID"}
+                        disabled={isPending || finalizedDebts.length === 0}
+                        className="h-5 w-5 accent-[#7dff7a] disabled:opacity-60"
+                        aria-label={`Mark ${row.username} as paid`}
+                        onChange={(event) =>
+                          updatePaymentStatus(
+                            row.username,
+                            event.target.checked,
+                          )
+                        }
+                      />
+                      <span className="text-sm">Paid</span>
+                    </label>
+                  </td>
+                  <td className="border-[3px] border-black p-3">
                     {row.username}
                   </td>
                   <td className="border-[3px] border-black p-3 font-black">
                     {currencyFormatter.format(row.totalDebt)}
                   </td>
                   <td className="border-[3px] border-black p-3">
-                    {row.status}
+                    <span
+                      className={`inline-block border-[3px] border-black px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111] ${
+                        row.status === "PAID"
+                          ? "bg-[#7dff7a]"
+                          : "bg-[#ff9f1c]"
+                      }`}
+                    >
+                      {row.status}
+                    </span>
                   </td>
                 </tr>
               ))}

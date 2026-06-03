@@ -48,3 +48,8 @@ export const invoiceBillingSchema = z.object({
 export const invoicePayloadSchema = z.object({
   billings: z.array(invoiceBillingSchema).min(1),
 });
+
+export const invoiceDebtStatusSchema = z.object({
+  username: z.string().trim().min(1).max(80),
+  status: z.enum(["UNPAID", "PAID"]),
+});

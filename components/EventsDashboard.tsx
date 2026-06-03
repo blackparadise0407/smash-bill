@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthenticatedDevice } from "@/lib/auth/session";
+import { formatEventDate, isEventExpired } from "@/lib/event-date";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
 type VoteBreakdown = {
@@ -48,15 +49,6 @@ const DEFAULT_PAGINATION: PaginationState = {
   hasPreviousPage: false,
 };
 
-function formatEventDate(eventDate: string) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${eventDate}T00:00:00Z`));
-}
-
 export default function EventsDashboard({ device }: EventsDashboardProps) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
@@ -67,7 +59,6 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
   const [isPending, startTransition] = useTransition();
 
   const loadEvents = useCallback(async () => {
-    setIsLoading(true);
     const params = new URLSearchParams({
       page: String(page),
       pageSize: String(EVENT_PAGE_SIZE),
@@ -87,10 +78,11 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
   }, [page]);
 
   useEffect(() => {
-    loadEvents();
+    void Promise.resolve().then(loadEvents);
   }, [loadEvents]);
 
   function goToPage(nextPage: number) {
+    setIsLoading(true);
     setPage(Math.max(1, Math.min(nextPage, pagination.totalPages)));
   }
 
@@ -193,17 +185,36 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
       <div className="grid gap-6">
         {events.map((event) => {
           const votedChoices = new Set(event.current_user_voted_choices);
+          const eventExpired = isEventExpired(event.event_date);
 
           return (
-            <article key={event.id} className="brutal-card bg-[#fff7e6] p-6">
+            <article
+              key={event.id}
+              className={`brutal-card p-6 ${
+                eventExpired ? "bg-[#ffe0e0]" : "bg-[#fff7e6]"
+              }`}
+            >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
                     {event.voter_count} voted
                   </p>
-                  <p className="mb-2 w-fit border-[3px] border-black bg-[#7dff7a] px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111]">
-                    {formatEventDate(event.event_date)}
-                  </p>
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    <p
+                      className={`w-fit border-[3px] border-black px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111] ${
+                        eventExpired
+                          ? "bg-[#ff3131] text-white"
+                          : "bg-[#7dff7a]"
+                      }`}
+                    >
+                      {formatEventDate(event.event_date)}
+                    </p>
+                    {eventExpired ? (
+                      <p className="w-fit border-[3px] border-black bg-white px-3 py-1 text-sm font-black uppercase text-[#ff3131] shadow-[3px_3px_0_#111]">
+                        Expired
+                      </p>
+                    ) : null}
+                  </div>
                   <h2 className="text-3xl font-black">{event.name}</h2>
                   {event.description ? (
                     <p className="mt-3 font-bold">{event.description}</p>
