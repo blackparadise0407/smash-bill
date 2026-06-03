@@ -34,21 +34,24 @@ export async function GET(_request: Request, context: RouteContext) {
   const device = await getAuthenticatedDevice();
 
   if (!device) {
-    return NextResponse.json({ message: "Bạn chưa có session hợp lệ." }, { status: 401 });
+    return NextResponse.json(
+      { message: "You do not have a valid session." },
+      { status: 401 },
+    );
   }
 
   if (!device.is_admin) {
-    return NextResponse.json({ message: "Bạn không có quyền admin." }, { status: 403 });
+    return NextResponse.json(
+      { message: "You do not have admin permission." },
+      { status: 403 },
+    );
   }
 
   const { id } = await context.params;
   const eventId = eventIdSchema.safeParse(id);
 
   if (!eventId.success) {
-    return NextResponse.json(
-      { message: "Event id không hợp lệ." },
-      { status: 400 },
-    );
+    return NextResponse.json({ message: "Invalid event id." }, { status: 400 });
   }
 
   const events = (await sql`
@@ -59,10 +62,7 @@ export async function GET(_request: Request, context: RouteContext) {
   `) as EventRow[];
 
   if (!events[0]) {
-    return NextResponse.json(
-      { message: "Không tìm thấy event." },
-      { status: 404 },
-    );
+    return NextResponse.json({ message: "Event not found." }, { status: 404 });
   }
 
   const participants = (await sql`
@@ -94,21 +94,24 @@ export async function POST(request: Request, context: RouteContext) {
   const device = await getAuthenticatedDevice();
 
   if (!device) {
-    return NextResponse.json({ message: "Bạn chưa có session hợp lệ." }, { status: 401 });
+    return NextResponse.json(
+      { message: "You do not have a valid session." },
+      { status: 401 },
+    );
   }
 
   if (!device.is_admin) {
-    return NextResponse.json({ message: "Bạn không có quyền admin." }, { status: 403 });
+    return NextResponse.json(
+      { message: "You do not have admin permission." },
+      { status: 403 },
+    );
   }
 
   const { id } = await context.params;
   const eventId = eventIdSchema.safeParse(id);
 
   if (!eventId.success) {
-    return NextResponse.json(
-      { message: "Event id không hợp lệ." },
-      { status: 400 },
-    );
+    return NextResponse.json({ message: "Invalid event id." }, { status: 400 });
   }
 
   const body = await request.json().catch(() => null);
@@ -116,7 +119,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { message: "Invoice payload không hợp lệ." },
+      { message: "Invalid invoice payload." },
       { status: 400 },
     );
   }
@@ -129,19 +132,16 @@ export async function POST(request: Request, context: RouteContext) {
   `) as { id: string }[];
 
   if (!eventRows[0]) {
-    return NextResponse.json(
-      { message: "Không tìm thấy event." },
-      { status: 404 },
-    );
+    return NextResponse.json({ message: "Event not found." }, { status: 404 });
   }
 
   const billingsJson = JSON.stringify(parsed.data.billings);
 
-  // Một câu SQL duy nhất với nhiều CTE để Neon thực thi atomically:
-  // 1. Xóa hóa đơn cũ của event.
-  // 2. Insert lại billings và billing_details từ payload JSON.
-  // 3. Tổng hợp rồi upsert event_debts theo username để tránh xung đột unique khi chốt lại hóa đơn.
-  // 4. Đổi trạng thái event sang COLLECTING để báo đang thu tiền.
+  // A single SQL statement with multiple CTEs so Neon executes atomically:
+  // 1. Delete existing invoices for the event.
+  // 2. Reinsert billings and billing_details from JSON payload.
+  // 3. Aggregate and upsert event_debts by username to avoid unique conflicts on re-finalization.
+  // 4. Switch event status to COLLECTING to indicate collection is in progress.
   const result = (await sql`
     with
       input_billings as materialized (
@@ -228,7 +228,7 @@ export async function POST(request: Request, context: RouteContext) {
   const invoice = result[0];
 
   return NextResponse.json({
-    message: "Đã chốt hóa đơn và chuyển event sang trạng thái đang thu tiền.",
+    message: "Invoice finalized and event moved to collecting status.",
     billingCount: Number(invoice?.billing_count ?? 0),
     debts: (invoice?.debts ?? []).map((debt) => ({
       ...debt,

@@ -1,32 +1,32 @@
-import { NextResponse } from 'next/server'
-import { sql } from '@/lib/db'
-import { getAuthenticatedDevice } from '@/lib/auth/session'
-import { createEventSchema } from '@/lib/validation'
+import { NextResponse } from "next/server";
+import { sql } from "@/lib/db";
+import { getAuthenticatedDevice } from "@/lib/auth/session";
+import { createEventSchema } from "@/lib/validation";
 
-export const runtime = 'nodejs'
+export const runtime = "nodejs";
 
 type VoteBreakdown = {
-  choiceIndex: number
-  choiceText: string
+  choiceIndex: number;
+  choiceText: string;
   voters: {
-    id: string
-    username: string
-  }[]
-}
+    id: string;
+    username: string;
+  }[];
+};
 
 type EventRow = {
-  id: string
-  name: string
-  choices: string[]
-  description: string | null
-  voter_count: string | number
-  has_voted: boolean | null
-  current_user_voted_choices: number[] | null
-  vote_breakdown: VoteBreakdown[] | null
-}
+  id: string;
+  name: string;
+  choices: string[];
+  description: string | null;
+  voter_count: string | number;
+  has_voted: boolean | null;
+  current_user_voted_choices: number[] | null;
+  vote_breakdown: VoteBreakdown[] | null;
+};
 
 export async function GET() {
-  const device = await getAuthenticatedDevice()
+  const device = await getAuthenticatedDevice();
   const rows = (await sql`
     select
       e.id,
@@ -84,7 +84,7 @@ export async function GET() {
       ) as vote_breakdown
     from events e
     order by e.name asc
-  `) as EventRow[]
+  `) as EventRow[];
 
   return NextResponse.json({
     events: rows.map((event) => ({
@@ -94,33 +94,42 @@ export async function GET() {
       current_user_voted_choices: event.current_user_voted_choices ?? [],
       vote_breakdown: event.vote_breakdown ?? [],
     })),
-  })
+  });
 }
 
 export async function POST(request: Request) {
-  const device = await getAuthenticatedDevice()
+  const device = await getAuthenticatedDevice();
 
   if (!device) {
-    return NextResponse.json({ message: 'Bạn chưa có session hợp lệ.' }, { status: 401 })
+    return NextResponse.json(
+      { message: "You do not have a valid session." },
+      { status: 401 },
+    );
   }
 
   if (!device.is_admin) {
-    return NextResponse.json({ message: 'Bạn không có quyền admin.' }, { status: 403 })
+    return NextResponse.json(
+      { message: "You do not have admin permission." },
+      { status: 403 },
+    );
   }
 
-  const body = await request.json().catch(() => null)
-  const parsed = createEventSchema.safeParse(body)
+  const body = await request.json().catch(() => null);
+  const parsed = createEventSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ message: 'Event payload không hợp lệ.' }, { status: 400 })
+    return NextResponse.json(
+      { message: "Invalid event payload." },
+      { status: 400 },
+    );
   }
 
-  const { name, choices, description } = parsed.data
+  const { name, choices, description } = parsed.data;
   const rows = (await sql`
     insert into events (name, choices, description)
     values (${name}, ${choices}, ${description ?? null})
     returning id, name, choices, description
-  `) as Pick<EventRow, 'id' | 'name' | 'choices' | 'description'>[]
+  `) as Pick<EventRow, "id" | "name" | "choices" | "description">[];
 
-  return NextResponse.json({ event: rows[0] }, { status: 201 })
+  return NextResponse.json({ event: rows[0] }, { status: 201 });
 }

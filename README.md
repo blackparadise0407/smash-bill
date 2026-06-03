@@ -44,7 +44,7 @@ The MVP currently uses these tables:
    ```bash
    curl -X POST http://localhost:3000/api/event \
      -H 'Content-Type: application/json' \
-     -d '{"name":"Cầu lông thứ 3 · 19:00-21:00","choices":["Có đi","Không đi"],"description":"Sân ABC · 2 giờ"}'
+       -d '{"name":"Tuesday badminton · 19:00-21:00","choices":["Going","Not going"],"description":"ABC court · 2 hours"}'
    ```
 
 6. Vote for any option. The selected option is validated against `events.choices`; if valid, the device is added to `event_voters` as the MVP attendance/voter record.
@@ -53,9 +53,9 @@ The MVP currently uses these tables:
 
 1. Users vote for any valid event option so they are stored in `event_voters`.
 2. Admin opens `/event/<event-id>/billing`.
-3. Admin adds draft categories such as `Sân cầu lông`, `Ăn uống`, or `Tiền nước`.
+3. Admin adds draft categories such as `Badminton court`, `Food & drinks`, or `Water`.
 4. The UI recalculates per-user amounts in real time using checked members and either hours-based or equal split mode.
-5. Admin clicks **Chốt & Xuất hóa đơn** to persist `billings`, `billing_details`, aggregate `event_debts`, and move the event to `COLLECTING`.
+5. Admin clicks **Finalize & Publish invoice** to persist `billings`, `billing_details`, aggregate `event_debts`, and move the event to `COLLECTING`.
 
 ## Environment variables
 

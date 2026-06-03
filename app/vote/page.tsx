@@ -15,7 +15,7 @@ export default async function VotePage() {
             className="mt-5 block w-fit border-[3px] border-black bg-[#7dff7a] px-4 py-3 font-black shadow-[5px_5px_0_#111]"
             href="/event"
           >
-            Admin tạo event
+            Admin event creation
           </a>
         ) : null}
       </header>

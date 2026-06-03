@@ -37,7 +37,7 @@ export default function AdminEventsCreator() {
     const data = await response.json();
 
     if (!response.ok) {
-      setMessage(data.message ?? "Không thể tải danh sách event.");
+      setMessage(data.message ?? "Unable to load event list.");
       setIsLoading(false);
       return;
     }
@@ -73,13 +73,13 @@ export default function AdminEventsCreator() {
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage(data.message ?? "Không thể tạo event.");
+        setMessage(data.message ?? "Unable to create event.");
         return;
       }
 
       form.reset();
       setChoicesText(DEFAULT_CHOICES.join("\n"));
-      setMessage(`Đã tạo event: ${data.event.name}`);
+      setMessage(`Event created: ${data.event.name}`);
       await loadEvents();
     });
   }
@@ -93,28 +93,28 @@ export default function AdminEventsCreator() {
         <p className="mb-4 inline-block border-[3px] border-black bg-[#7dff7a] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
           Admin form
         </p>
-        <h2 className="text-3xl font-black">Tạo event mới</h2>
+        <h2 className="text-3xl font-black">Create new event</h2>
 
         <div className="mt-6 space-y-5">
           <label className="block">
-            <span className="mb-2 block font-black uppercase">Tên event</span>
+            <span className="mb-2 block font-black uppercase">Event name</span>
             <input
               name="name"
               required
               minLength={1}
               maxLength={160}
-              placeholder="Ví dụ: Cầu lông thứ 3 · 19:00-21:00"
+              placeholder="Example: Tuesday badminton · 19:00-21:00"
               className="brutal-input w-full px-4 py-3 text-lg font-bold"
             />
           </label>
 
           <label className="block">
-            <span className="mb-2 block font-black uppercase">Mô tả</span>
+            <span className="mb-2 block font-black uppercase">Description</span>
             <textarea
               name="description"
               maxLength={1000}
               rows={4}
-              placeholder="Sân, giờ, ghi chú nội bộ..."
+              placeholder="Court, time, internal notes..."
               className="brutal-input w-full resize-y px-4 py-3 text-lg font-bold"
             />
           </label>
@@ -131,7 +131,7 @@ export default function AdminEventsCreator() {
               className="brutal-input w-full resize-y px-4 py-3 text-lg font-bold"
             />
             <span className="mt-2 block text-sm font-black uppercase">
-              Tối đa 10 options, mỗi option tối đa 80 ký tự.
+              Up to 10 options, each option up to 80 characters.
             </span>
           </label>
         </div>
@@ -140,7 +140,7 @@ export default function AdminEventsCreator() {
           disabled={isPending}
           className="brutal-button mt-6 w-full px-5 py-3 text-lg font-black disabled:opacity-60"
         >
-          {isPending ? "Đang tạo event..." : "Tạo event"}
+          {isPending ? "Creating event..." : "Create event"}
         </button>
 
         {message ? (
@@ -157,28 +157,28 @@ export default function AdminEventsCreator() {
               <p className="mb-3 inline-block border-[3px] border-black bg-white px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
                 Event list
               </p>
-              <h2 className="text-3xl font-black">Events hiện có</h2>
+              <h2 className="text-3xl font-black">Existing events</h2>
             </div>
             <a
               className="border-[3px] border-black bg-[#7dff7a] px-4 py-2 font-black shadow-[4px_4px_0_#111]"
               href="/vote"
             >
-              Xem trang vote
+              View voting page
             </a>
           </div>
         </div>
 
         {isLoading ? (
           <article className="brutal-card bg-[#fff7e6] p-6">
-            <h3 className="text-2xl font-black">Đang tải events...</h3>
+            <h3 className="text-2xl font-black">Loading events...</h3>
           </article>
         ) : null}
 
         {!isLoading && events.length === 0 ? (
           <article className="brutal-card bg-[#fff7e6] p-6">
-            <h3 className="text-2xl font-black">Chưa có event nào</h3>
+            <h3 className="text-2xl font-black">No events yet</h3>
             <p className="mt-3 font-bold">
-              Tạo event đầu tiên bằng form bên trái.
+              Create your first event using the form on the left.
             </p>
           </article>
         ) : null}
@@ -207,7 +207,7 @@ export default function AdminEventsCreator() {
               ))}
             </div>
             <section className="mt-5 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
-              <h4 className="text-xl font-black">Người vote theo option</h4>
+              <h4 className="text-xl font-black">Voters by option</h4>
               <div className="mt-3 grid gap-3">
                 {event.vote_breakdown.map((choice) => (
                   <div
@@ -219,7 +219,7 @@ export default function AdminEventsCreator() {
                     </p>
                     {choice.voters.length === 0 ? (
                       <p className="mt-2 text-sm font-bold uppercase opacity-70">
-                        Chưa có ai chọn
+                        No one selected this option yet
                       </p>
                     ) : (
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -242,13 +242,13 @@ export default function AdminEventsCreator() {
                 className="border-[3px] border-black bg-[#5dc9ff] px-4 py-3 text-center font-black shadow-[4px_4px_0_#111]"
                 href={`/event/${event.id}/billing`}
               >
-                Mở billing
+                Open billing
               </a>
               <a
                 className="border-[3px] border-black bg-[#7dff7a] px-4 py-3 text-center font-black shadow-[4px_4px_0_#111]"
                 href="/vote"
               >
-                Mở vote
+                Open voting
               </a>
             </div>
           </article>

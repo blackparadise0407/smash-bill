@@ -39,7 +39,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
     const data = await response.json();
 
     if (!response.ok) {
-      setMessage(data.message ?? "Không thể tải danh sách event.");
+      setMessage(data.message ?? "Unable to load event list.");
       setIsLoading(false);
       return;
     }
@@ -63,7 +63,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
 
       setMessage(
         data.message ??
-          (response.ok ? "Đã ghi nhận vote." : "Không thể vote option này."),
+          (response.ok ? "Vote recorded." : "Unable to vote for this option."),
       );
 
       if (response.ok) {
@@ -82,7 +82,8 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
       const data = await response.json();
 
       setMessage(
-        data.message ?? (response.ok ? "Đã xóa vote." : "Không thể xóa vote."),
+        data.message ??
+          (response.ok ? "Vote removed." : "Unable to remove vote."),
       );
 
       if (response.ok) {
@@ -94,8 +95,8 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
   if (isLoading) {
     return (
       <section className="brutal-card bg-[#fff7e6] p-6">
-        <h2 className="text-3xl font-black">Đang tải lịch...</h2>
-        <p className="mt-3 font-bold">Đọc events từ Neon Postgres.</p>
+        <h2 className="text-3xl font-black">Loading schedule...</h2>
+        <p className="mt-3 font-bold">Fetching events from Neon Postgres.</p>
       </section>
     );
   }
@@ -110,7 +111,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
 
       {events.length === 0 ? (
         <div className="brutal-card bg-[#fff7e6] p-6">
-          <h2 className="text-3xl font-black">Chưa có event nào</h2>
+          <h2 className="text-3xl font-black">No events yet</h2>
         </div>
       ) : null}
 
@@ -124,7 +125,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                 <div>
                   {event.has_voted ? (
                     <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-                      {event.voter_count} người đã vote
+                      {event.voter_count} voted
                     </p>
                   ) : null}
                   <h2 className="text-3xl font-black">{event.name}</h2>
@@ -134,7 +135,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                 </div>
 
                 <div className="border-[3px] border-black bg-white px-3 py-2 font-black shadow-[4px_4px_0_#111]">
-                  {event.has_voted ? "Đã vote" : "Chưa vote"}
+                  {event.has_voted ? "Voted" : "Not voted"}
                 </div>
               </div>
 
@@ -159,8 +160,8 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                         <span className="block">{choice}</span>
                         <span className="mt-1 block text-sm uppercase">
                           {hasVotedChoice
-                            ? "Đã chọn · bấm để bỏ"
-                            : "Bấm để chọn"}
+                            ? "Selected · click to remove"
+                            : "Click to select"}
                         </span>
                       </button>
                     );
@@ -169,7 +170,9 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
               </div>
 
               <section className="mt-6 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
-                <h3 className="text-2xl font-black">Ai vote option nào?</h3>
+                <h3 className="text-2xl font-black">
+                  Who voted for each option?
+                </h3>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {event.vote_breakdown.map((choice) => (
                     <div
@@ -181,7 +184,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                       </p>
                       {choice.voters.length === 0 ? (
                         <p className="mt-2 text-sm font-bold uppercase opacity-70">
-                          Chưa có ai chọn
+                          No one selected this option yet
                         </p>
                       ) : (
                         <div className="mt-2 flex flex-wrap gap-2">
@@ -206,14 +209,14 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                   className="border-[3px] border-black bg-[#ff5fb7] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60"
                   onClick={() => removeVote(event.id)}
                 >
-                  Xóa tất cả vote khỏi event
+                  Remove all votes from this event
                 </button>
                 {device?.is_admin ? (
                   <a
                     className="border-[3px] border-black bg-[#7dff7a] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111]"
                     href={`/event/${event.id}/billing`}
                   >
-                    Tạo hóa đơn
+                    Create invoice
                   </a>
                 ) : null}
               </div>

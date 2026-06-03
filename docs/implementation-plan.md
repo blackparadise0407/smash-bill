@@ -34,7 +34,7 @@
 2. The page loads voters from `event_voters` joined with `devices`.
 3. Admin creates one or more draft categories. Each category can split by hours or split equally among checked members.
 4. The React client keeps drafts in `savedBillings` and computes `finalSummary` with `useMemo` before anything is persisted.
-5. Admin clicks **Chốt & Xuất hóa đơn**. The client sends the draft array to `POST /api/event/[id]/invoice`.
+5. Admin clicks **Finalize & Publish invoice**. The client sends the draft array to `POST /api/event/[id]/invoice`.
 6. The API stores `billings`, `billing_details`, aggregates `event_debts`, and updates the event status to `COLLECTING` in one SQL CTE statement.
 
 ## Neon setup
