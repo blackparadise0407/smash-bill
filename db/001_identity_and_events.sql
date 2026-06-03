@@ -23,8 +23,9 @@ drop table if exists votes;
 create table if not exists events (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  choices text[] not null default array['Có đi', 'Không đi']::text[],
+  choices text[] not null default array['Yes', 'No']::text[],
   description text,
+  event_date date not null default current_date,
   status text not null default 'OPEN',
   constraint events_name_length_chk check (char_length(name) between 1 and 160),
   constraint events_choices_not_empty_chk check (array_length(choices, 1) >= 1),
@@ -32,6 +33,7 @@ create table if not exists events (
 );
 
 alter table events add column if not exists status text not null default 'OPEN';
+alter table events add column if not exists event_date date not null default current_date;
 
 do $$
 begin
@@ -122,6 +124,7 @@ create table if not exists event_debts (
 alter table devices add column if not exists is_admin boolean not null default false;
 
 create index if not exists devices_last_seen_at_idx on devices(last_seen_at);
+create index if not exists events_event_date_idx on events(event_date);
 create index if not exists event_voters_event_id_idx on event_voters(event_id);
 create index if not exists event_voters_voter_id_idx on event_voters(voter_id);
 create index if not exists event_voters_event_choice_idx on event_voters(event_id, voted_choice);

@@ -19,20 +19,53 @@ type EventRow = {
   name: string;
   choices: string[];
   description: string | null;
+  event_date: string;
   voter_count: string | number;
   has_voted: boolean | null;
   current_user_voted_choices: number[] | null;
   vote_breakdown: VoteBreakdown[] | null;
 };
 
-export async function GET() {
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 5;
+const MAX_PAGE_SIZE = 20;
+
+function getPositiveInteger(value: string | null, fallback: number) {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+export async function GET(request: Request) {
   const device = await getAuthenticatedDevice();
+  const { searchParams } = new URL(request.url);
+  const page = getPositiveInteger(searchParams.get("page"), DEFAULT_PAGE);
+  const requestedPageSize = getPositiveInteger(
+    searchParams.get("pageSize"),
+    DEFAULT_PAGE_SIZE,
+  );
+  const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
+
+  const totalRows = (await sql`
+    select count(*) as total
+    from events
+  `) as { total: string | number }[];
+  const totalItems = Number(totalRows[0]?.total ?? 0);
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const offset = (currentPage - 1) * pageSize;
+
   const rows = (await sql`
     select
       e.id,
       e.name,
       e.choices,
       e.description,
+      to_char(e.event_date, 'YYYY-MM-DD') as event_date,
       (
         select count(distinct ev.voter_id)
         from event_voters ev
@@ -83,17 +116,28 @@ export async function GET() {
         '[]'::json
       ) as vote_breakdown
     from events e
-    order by e.name asc
+    order by e.event_date asc, e.name asc
+    limit ${pageSize}
+    offset ${offset}
   `) as EventRow[];
 
   return NextResponse.json({
     events: rows.map((event) => ({
       ...event,
+      event_date: String(event.event_date),
       voter_count: Number(event.voter_count),
       has_voted: Boolean(event.has_voted),
       current_user_voted_choices: event.current_user_voted_choices ?? [],
       vote_breakdown: event.vote_breakdown ?? [],
     })),
+    pagination: {
+      page: currentPage,
+      pageSize,
+      totalItems,
+      totalPages,
+      hasNextPage: currentPage < totalPages,
+      hasPreviousPage: currentPage > 1,
+    },
   });
 }
 
@@ -124,12 +168,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, choices, description } = parsed.data;
+  const { name, choices, description, eventDate } = parsed.data;
   const rows = (await sql`
-    insert into events (name, choices, description)
-    values (${name}, ${choices}, ${description ?? null})
-    returning id, name, choices, description
-  `) as Pick<EventRow, "id" | "name" | "choices" | "description">[];
+    insert into events (name, choices, description, event_date)
+    values (${name}, ${choices}, ${description ?? null}, ${eventDate})
+    returning id, name, choices, description, event_date
+  `) as Pick<
+    EventRow,
+    "id" | "name" | "choices" | "description" | "event_date"
+  >[];
 
   return NextResponse.json({ event: rows[0] }, { status: 201 });
 }

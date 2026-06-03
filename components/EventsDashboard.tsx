@@ -17,25 +17,62 @@ type EventItem = {
   name: string;
   choices: string[];
   description: string | null;
+  event_date: string;
   voter_count: number;
   has_voted: boolean;
   current_user_voted_choices: number[];
   vote_breakdown: VoteBreakdown[];
 };
 
+type PaginationState = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
 type EventsDashboardProps = {
   device: AuthenticatedDevice | null;
 };
 
+const EVENT_PAGE_SIZE = 5;
+
+const DEFAULT_PAGINATION: PaginationState = {
+  page: 1,
+  pageSize: EVENT_PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+};
+
+function formatEventDate(eventDate: string) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${eventDate}T00:00:00Z`));
+}
+
 export default function EventsDashboard({ device }: EventsDashboardProps) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [pagination, setPagination] =
+    useState<PaginationState>(DEFAULT_PAGINATION);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
-    const response = await fetch("/api/event", { cache: "no-store" });
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(EVENT_PAGE_SIZE),
+    });
+    const response = await fetch(`/api/event?${params}`, { cache: "no-store" });
     const data = await response.json();
 
     if (!response.ok) {
@@ -45,12 +82,17 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
     }
 
     setEvents(data.events ?? []);
+    setPagination(data.pagination ?? DEFAULT_PAGINATION);
     setIsLoading(false);
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  function goToPage(nextPage: number) {
+    setPage(Math.max(1, Math.min(nextPage, pagination.totalPages)));
+  }
 
   function voteForChoice(eventId: string, votedChoice: number) {
     startTransition(async () => {
@@ -128,6 +170,9 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                       {event.voter_count} voted
                     </p>
                   ) : null}
+                  <p className="mb-2 w-fit border-[3px] border-black bg-[#7dff7a] px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111]">
+                    {formatEventDate(event.event_date)}
+                  </p>
                   <h2 className="text-3xl font-black">{event.name}</h2>
                   {event.description ? (
                     <p className="mt-3 font-bold">{event.description}</p>
@@ -224,6 +269,36 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
           );
         })}
       </div>
+
+      {events.length > 0 ? (
+        <nav
+          className="brutal-card flex flex-wrap items-center justify-between gap-3 bg-white p-4"
+          aria-label="Event pagination"
+        >
+          <p className="font-black uppercase">
+            Page {pagination.page} of {pagination.totalPages} ·{" "}
+            {pagination.totalItems} events
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              disabled={!pagination.hasPreviousPage || isLoading}
+              className="border-[3px] border-black bg-[#5dc9ff] px-4 py-2 font-black shadow-[4px_4px_0_#111] disabled:opacity-50"
+              onClick={() => goToPage(page - 1)}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              disabled={!pagination.hasNextPage || isLoading}
+              className="border-[3px] border-black bg-[#7dff7a] px-4 py-2 font-black shadow-[4px_4px_0_#111] disabled:opacity-50"
+              onClick={() => goToPage(page + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </nav>
+      ) : null}
     </section>
   );
 }
