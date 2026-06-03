@@ -116,7 +116,7 @@ export async function GET(request: Request) {
         '[]'::json
       ) as vote_breakdown
     from events e
-    order by e.event_date asc, e.name asc
+    order by e.event_date desc, e.name asc
     limit ${pageSize}
     offset ${offset}
   `) as EventRow[];
