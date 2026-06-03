@@ -5,6 +5,15 @@ import { createEventSchema } from '@/lib/validation'
 
 export const runtime = 'nodejs'
 
+type VoteBreakdown = {
+  choiceIndex: number
+  choiceText: string
+  voters: {
+    id: string
+    username: string
+  }[]
+}
+
 type EventRow = {
   id: string
   name: string
@@ -12,6 +21,8 @@ type EventRow = {
   description: string | null
   voter_count: string | number
   has_voted: boolean | null
+  current_user_voted_choices: number[] | null
+  vote_breakdown: VoteBreakdown[] | null
 }
 
 export async function GET() {
@@ -22,11 +33,56 @@ export async function GET() {
       e.name,
       e.choices,
       e.description,
-      count(ev.id) as voter_count,
-      bool_or(ev.voter_id = ${device?.id ?? null}) as has_voted
+      (
+        select count(distinct ev.voter_id)
+        from event_voters ev
+        where ev.event_id = e.id
+      ) as voter_count,
+      exists (
+        select 1
+        from event_voters ev
+        where ev.event_id = e.id
+          and ev.voter_id = ${device?.id ?? null}
+      ) as has_voted,
+      coalesce(
+        (
+          select array_agg(ev.voted_choice order by ev.voted_choice)
+          from event_voters ev
+          where ev.event_id = e.id
+            and ev.voter_id = ${device?.id ?? null}
+        ),
+        array[]::integer[]
+      ) as current_user_voted_choices,
+      coalesce(
+        (
+          select json_agg(
+            json_build_object(
+              'choiceIndex', choice.choice_ordinal - 1,
+              'choiceText', choice.choice_text,
+              'voters', coalesce(
+                (
+                  select json_agg(
+                    json_build_object(
+                      'id', d.id,
+                      'username', d.username
+                    )
+                    order by d.username asc
+                  )
+                  from event_voters ev
+                  join devices d on d.id = ev.voter_id
+                  where ev.event_id = e.id
+                    and ev.voted_choice = choice.choice_ordinal - 1
+                ),
+                '[]'::json
+              )
+            )
+            order by choice.choice_ordinal asc
+          )
+          from unnest(e.choices) with ordinality as choice(choice_text, choice_ordinal)
+        ),
+        '[]'::json
+      ) as vote_breakdown
     from events e
-    left join event_voters ev on ev.event_id = e.id
-    group by e.id
     order by e.name asc
   `) as EventRow[]
 
@@ -35,6 +91,8 @@ export async function GET() {
       ...event,
       voter_count: Number(event.voter_count),
       has_voted: Boolean(event.has_voted),
+      current_user_voted_choices: event.current_user_voted_choices ?? [],
+      vote_breakdown: event.vote_breakdown ?? [],
     })),
   })
 }

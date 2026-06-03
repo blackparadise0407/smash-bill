@@ -3,6 +3,15 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
+type VoteBreakdown = {
+  choiceIndex: number;
+  choiceText: string;
+  voters: {
+    id: string;
+    username: string;
+  }[];
+};
+
 type EventItem = {
   id: string;
   name: string;
@@ -10,6 +19,7 @@ type EventItem = {
   description: string | null;
   voter_count: number;
   has_voted: boolean;
+  vote_breakdown: VoteBreakdown[];
 };
 
 const DEFAULT_CHOICES = ["8h-10h", "9h-11h"];
@@ -187,15 +197,46 @@ export default function AdminEventsCreator() {
               </span>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              {event.choices.map((choice) => (
+              {event.choices.map((choice, choiceIndex) => (
                 <span
-                  key={choice}
+                  key={`${choice}-${choiceIndex}`}
                   className="border-[3px] border-black bg-white px-3 py-1 font-black shadow-[3px_3px_0_#111]"
                 >
                   {choice}
                 </span>
               ))}
             </div>
+            <section className="mt-5 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
+              <h4 className="text-xl font-black">Người vote theo option</h4>
+              <div className="mt-3 grid gap-3">
+                {event.vote_breakdown.map((choice) => (
+                  <div
+                    key={choice.choiceIndex}
+                    className="border-[3px] border-black bg-[#fff7e6] p-3"
+                  >
+                    <p className="font-black">
+                      #{choice.choiceIndex} · {choice.choiceText}
+                    </p>
+                    {choice.voters.length === 0 ? (
+                      <p className="mt-2 text-sm font-bold uppercase opacity-70">
+                        Chưa có ai chọn
+                      </p>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {choice.voters.map((voter) => (
+                          <span
+                            key={voter.id}
+                            className="border-[2px] border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
+                          >
+                            {voter.username}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <a
                 className="border-[3px] border-black bg-[#5dc9ff] px-4 py-3 text-center font-black shadow-[4px_4px_0_#111]"

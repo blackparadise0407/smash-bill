@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 
+type VoteBreakdown = {
+  choiceIndex: number;
+  choiceText: string;
+  voters: {
+    id: string;
+    username: string;
+  }[];
+};
+
 type EventItem = {
   id: string;
   name: string;
@@ -9,6 +18,8 @@ type EventItem = {
   description: string | null;
   voter_count: number;
   has_voted: boolean;
+  current_user_voted_choices: number[];
+  vote_breakdown: VoteBreakdown[];
 };
 
 export default function EventsDashboard() {
@@ -36,12 +47,12 @@ export default function EventsDashboard() {
     loadEvents();
   }, [loadEvents]);
 
-  function voteForChoice(eventId: string, choice: string) {
+  function voteForChoice(eventId: string, votedChoice: number) {
     startTransition(async () => {
       const response = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, choice }),
+        body: JSON.stringify({ eventId, votedChoice }),
       });
       const data = await response.json();
 
@@ -56,12 +67,12 @@ export default function EventsDashboard() {
     });
   }
 
-  function removeVote(eventId: string) {
+  function removeVote(eventId: string, votedChoice?: number) {
     startTransition(async () => {
       const response = await fetch("/api/vote", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId }),
+        body: JSON.stringify({ eventId, votedChoice }),
       });
       const data = await response.json();
 
@@ -99,56 +110,105 @@ export default function EventsDashboard() {
       ) : null}
 
       <div className="grid gap-6">
-        {events.map((event) => (
-          <article key={event.id} className="brutal-card bg-[#fff7e6] p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-                  {event.voter_count} thiết bị đã vote
-                </p>
-                <h2 className="text-3xl font-black">{event.name}</h2>
-                {event.description ? (
-                  <p className="mt-3 font-bold">{event.description}</p>
-                ) : null}
+        {events.map((event) => {
+          const votedChoices = new Set(event.current_user_voted_choices);
+
+          return (
+            <article key={event.id} className="brutal-card bg-[#fff7e6] p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
+                    {event.voter_count} thiết bị đã vote
+                  </p>
+                  <h2 className="text-3xl font-black">{event.name}</h2>
+                  {event.description ? (
+                    <p className="mt-3 font-bold">{event.description}</p>
+                  ) : null}
+                </div>
+
+                <div className="border-[3px] border-black bg-white px-3 py-2 font-black shadow-[4px_4px_0_#111]">
+                  {event.has_voted ? "Đã vote" : "Chưa vote"}
+                </div>
               </div>
 
-              <div className="border-[3px] border-black bg-white px-3 py-2 font-black shadow-[4px_4px_0_#111]">
-                {event.has_voted ? "Đã vote" : "Chưa vote"}
-              </div>
-            </div>
+              <div className="mt-6">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {event.choices.map((choice, choiceIndex) => {
+                    const hasVotedChoice = votedChoices.has(choiceIndex);
 
-            <div className="mt-6">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {event.choices.map((choice) => (
-                  <button
-                    key={choice}
-                    disabled={isPending || event.has_voted}
-                    className="border-[3px] border-black bg-[#5dc9ff] px-4 py-3 text-left text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60"
-                    onClick={() => voteForChoice(event.id, choice)}
-                  >
-                    {choice}
-                  </button>
-                ))}
+                    return (
+                      <button
+                        key={`${choice}-${choiceIndex}`}
+                        disabled={isPending}
+                        className={`border-[3px] border-black px-4 py-3 text-left text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60 ${
+                          hasVotedChoice ? "bg-[#7dff7a]" : "bg-[#5dc9ff]"
+                        }`}
+                        onClick={() =>
+                          hasVotedChoice
+                            ? removeVote(event.id, choiceIndex)
+                            : voteForChoice(event.id, choiceIndex)
+                        }
+                      >
+                        <span className="block">{choice}</span>
+                        <span className="mt-1 block text-sm uppercase">
+                          {hasVotedChoice ? "Đã chọn · bấm để bỏ" : "Bấm để chọn"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <button
-                disabled={isPending || !event.has_voted}
-                className="border-[3px] border-black bg-[#ff5fb7] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60"
-                onClick={() => removeVote(event.id)}
-              >
-                Xóa vote khỏi event
-              </button>
-              <a
-                className="border-[3px] border-black bg-[#7dff7a] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111]"
-                href={`/event/${event.id}/billing`}
-              >
-                Tạo hóa đơn
-              </a>
-            </div>
-          </article>
-        ))}
+              <section className="mt-6 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
+                <h3 className="text-2xl font-black">Ai vote option nào?</h3>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {event.vote_breakdown.map((choice) => (
+                    <div
+                      key={choice.choiceIndex}
+                      className="border-[3px] border-black bg-[#fff7e6] p-3"
+                    >
+                      <p className="font-black">
+                        #{choice.choiceIndex} · {choice.choiceText}
+                      </p>
+                      {choice.voters.length === 0 ? (
+                        <p className="mt-2 text-sm font-bold uppercase opacity-70">
+                          Chưa có ai chọn
+                        </p>
+                      ) : (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {choice.voters.map((voter) => (
+                            <span
+                              key={voter.id}
+                              className="border-[2px] border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
+                            >
+                              {voter.username}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <button
+                  disabled={isPending || !event.has_voted}
+                  className="border-[3px] border-black bg-[#ff5fb7] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60"
+                  onClick={() => removeVote(event.id)}
+                >
+                  Xóa tất cả vote khỏi event
+                </button>
+                <a
+                  className="border-[3px] border-black bg-[#7dff7a] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111]"
+                  href={`/event/${event.id}/billing`}
+                >
+                  Tạo hóa đơn
+                </a>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
