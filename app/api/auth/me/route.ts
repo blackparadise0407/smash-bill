@@ -10,6 +10,7 @@ type DeviceRow = {
   id: string
   username: string
   session_version: number
+  is_admin: boolean
 }
 
 export async function GET() {
@@ -23,7 +24,7 @@ export async function GET() {
   try {
     const session = await verifySessionJwt(token)
     const rows = (await sql`
-      select id, username, session_version
+      select id, username, session_version, is_admin
       from devices
       where id = ${session.deviceId}
       limit 1
@@ -39,6 +40,7 @@ export async function GET() {
       user: {
         deviceId: device.id,
         username: device.username,
+        isAdmin: device.is_admin,
       },
     })
   } catch {

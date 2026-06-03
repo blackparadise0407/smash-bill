@@ -1,6 +1,14 @@
+import { redirect } from 'next/navigation'
 import AdminEventsCreator from '@/components/AdminEventsCreator'
+import { getAuthenticatedDevice } from '@/lib/auth/session'
 
-export default function EventsAdminPage() {
+export default async function EventsAdminPage() {
+  const device = await getAuthenticatedDevice()
+
+  if (!device?.is_admin) {
+    redirect('/vote')
+  }
+
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-5 py-8 md:px-8">
       <header className="brutal-card mb-8 bg-[#ff5fb7] p-6">

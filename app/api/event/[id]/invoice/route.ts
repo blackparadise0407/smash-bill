@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
+import { getAuthenticatedDevice } from "@/lib/auth/session";
 import { invoicePayloadSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -30,6 +31,16 @@ type DebtRow = {
 };
 
 export async function GET(_request: Request, context: RouteContext) {
+  const device = await getAuthenticatedDevice();
+
+  if (!device) {
+    return NextResponse.json({ message: "Bạn chưa có session hợp lệ." }, { status: 401 });
+  }
+
+  if (!device.is_admin) {
+    return NextResponse.json({ message: "Bạn không có quyền admin." }, { status: 403 });
+  }
+
   const { id } = await context.params;
   const eventId = eventIdSchema.safeParse(id);
 
@@ -80,6 +91,16 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  const device = await getAuthenticatedDevice();
+
+  if (!device) {
+    return NextResponse.json({ message: "Bạn chưa có session hợp lệ." }, { status: 401 });
+  }
+
+  if (!device.is_admin) {
+    return NextResponse.json({ message: "Bạn không có quyền admin." }, { status: 403 });
+  }
+
   const { id } = await context.params;
   const eventId = eventIdSchema.safeParse(id);
 
