@@ -487,7 +487,7 @@ export default function BillingClient({ eventId }: Props) {
     setIsExporting(true);
 
     try {
-      const blob = await createInvoiceJpegBlob(
+      const blob = await createInvoicePngBlob(
         event,
         finalSummary,
         finalizedBillings,
