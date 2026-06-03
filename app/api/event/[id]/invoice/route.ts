@@ -30,6 +30,17 @@ type DebtRow = {
   status: "UNPAID" | "PAID";
 };
 
+type BillingRow = {
+  id: string;
+  category: string;
+  total_amount: string | number;
+  details: {
+    username: string;
+    hours: string | number;
+    amount: string | number;
+  }[];
+};
+
 export async function GET(_request: Request, context: RouteContext) {
   const device = await getAuthenticatedDevice();
 
@@ -80,12 +91,46 @@ export async function GET(_request: Request, context: RouteContext) {
     order by username asc
   `) as DebtRow[];
 
+  const billings = (await sql`
+    select
+      b.id,
+      b.category,
+      b.total_amount,
+      coalesce(
+        json_agg(
+          json_build_object(
+            'username', bd.username,
+            'hours', bd.hours,
+            'amount', bd.amount
+          )
+          order by bd.username
+        ) filter (where bd.id is not null),
+        '[]'::json
+      ) as details
+    from billings b
+    left join billing_details bd on bd.billing_id = b.id
+    where b.event_id = ${eventId.data}
+    group by b.id, b.category, b.total_amount, b.created_at
+    order by b.created_at asc, b.category asc
+  `) as BillingRow[];
+
   return NextResponse.json({
     event: events[0],
     participants,
+    billings: billings.map((billing) => ({
+      id: billing.id,
+      category: billing.category,
+      totalAmount: Number(billing.total_amount),
+      details: billing.details.map((detail) => ({
+        username: detail.username,
+        hours: Number(detail.hours),
+        amount: Number(detail.amount),
+      })),
+    })),
     debts: debts.map((debt) => ({
-      ...debt,
-      total_debt: Number(debt.total_debt),
+      username: debt.username,
+      totalDebt: Number(debt.total_debt),
+      status: debt.status,
     })),
   });
 }
