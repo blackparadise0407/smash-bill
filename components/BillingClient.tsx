@@ -11,7 +11,9 @@ import BillingRow from "@/components/BillingRow";
 import type {
   BillingMemberDraft,
   BillingParticipant,
+  FinalizedBillingSummary,
   FinalSummaryRow,
+  InvoiceStatus,
   SavedBillingDraft,
   SplitMode,
 } from "@/types/billing";
@@ -21,6 +23,12 @@ type EventInfo = {
   name: string;
   description: string | null;
   status: string;
+};
+
+type FinalizedDebt = {
+  username: string;
+  totalDebt: number;
+  status: InvoiceStatus;
 };
 
 type Props = {
@@ -35,6 +43,10 @@ const DEFAULT_CATEGORIES = [
   "Other",
 ];
 
+const INVOICE_EXPORT_WIDTH = 1200;
+const INVOICE_EXPORT_PADDING = 64;
+const INVOICE_EXPORT_ROW_HEIGHT = 76;
+
 const currencyFormatter = new Intl.NumberFormat("vi-VN", {
   style: "currency",
   currency: "VND",
@@ -43,6 +55,207 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 
 function roundMoney(value: number) {
   return Math.round(value);
+}
+
+function drawWrappedText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+) {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+
+    if (context.measureText(nextLine).width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+      return;
+    }
+
+    currentLine = nextLine;
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  lines.forEach((line, index) => {
+    context.fillText(line, x, y + index * lineHeight);
+  });
+
+  return lines.length * lineHeight;
+}
+
+function createInvoiceJpegBlob(
+  event: EventInfo | null,
+  rows: FinalSummaryRow[],
+  billings: FinalizedBillingSummary[],
+  finalizedAt: Date,
+) {
+  return new Promise<Blob>((resolve, reject) => {
+    const rowCount = Math.max(rows.length, 1);
+    const billingCount = Math.max(billings.length, 0);
+    const canvas = document.createElement("canvas");
+    canvas.width = INVOICE_EXPORT_WIDTH;
+    canvas.height =
+      620 +
+      rowCount * INVOICE_EXPORT_ROW_HEIGHT +
+      (billingCount > 0 ? 140 + billingCount * INVOICE_EXPORT_ROW_HEIGHT : 0);
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      reject(new Error("Unable to create invoice image."));
+      return;
+    }
+
+    context.fillStyle = "#f8f13d";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.fillStyle = "#fff7e6";
+    context.strokeStyle = "#111111";
+    context.lineWidth = 8;
+    context.fillRect(32, 32, canvas.width - 64, canvas.height - 64);
+    context.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
+
+    context.fillStyle = "#ff5fb7";
+    context.fillRect(64, 64, canvas.width - 128, 120);
+    context.strokeRect(64, 64, canvas.width - 128, 120);
+
+    context.fillStyle = "#111111";
+    context.font = "900 52px Arial, Helvetica, sans-serif";
+    context.fillText("Final Invoice", INVOICE_EXPORT_PADDING + 24, 132);
+
+    context.font = "700 28px Arial, Helvetica, sans-serif";
+    context.fillText(
+      finalizedAt.toLocaleDateString("vi-VN", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+      INVOICE_EXPORT_WIDTH - 350,
+      132,
+    );
+
+    let y = 240;
+    context.font = "900 42px Arial, Helvetica, sans-serif";
+    y += drawWrappedText(
+      context,
+      event?.name ?? "Event billing",
+      INVOICE_EXPORT_PADDING,
+      y,
+      INVOICE_EXPORT_WIDTH - INVOICE_EXPORT_PADDING * 2,
+      48,
+    );
+
+    if (event?.description) {
+      context.font = "700 24px Arial, Helvetica, sans-serif";
+      y += drawWrappedText(
+        context,
+        event.description,
+        INVOICE_EXPORT_PADDING,
+        y + 18,
+        INVOICE_EXPORT_WIDTH - INVOICE_EXPORT_PADDING * 2,
+        32,
+      );
+    }
+
+    y += 40;
+    const tableX = INVOICE_EXPORT_PADDING;
+    const tableWidth = INVOICE_EXPORT_WIDTH - INVOICE_EXPORT_PADDING * 2;
+    const participantWidth = 500;
+    const totalWidth = 360;
+
+    context.fillStyle = "#5dc9ff";
+    context.fillRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+    context.strokeRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+    context.fillStyle = "#111111";
+    context.font = "900 26px Arial, Helvetica, sans-serif";
+    context.fillText("Participant", tableX + 24, y + 48);
+    context.fillText("Total", tableX + participantWidth + 24, y + 48);
+    context.fillText(
+      "Status",
+      tableX + participantWidth + totalWidth + 24,
+      y + 48,
+    );
+
+    y += INVOICE_EXPORT_ROW_HEIGHT;
+    context.font = "800 28px Arial, Helvetica, sans-serif";
+
+    if (rows.length === 0) {
+      context.fillStyle = "#ffffff";
+      context.fillRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+      context.strokeRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+      context.fillStyle = "#111111";
+      context.fillText("No invoice totals available.", tableX + 24, y + 48);
+    } else {
+      rows.forEach((row, index) => {
+        context.fillStyle = index % 2 === 0 ? "#ffffff" : "#fffbd1";
+        context.fillRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+        context.strokeRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+        context.fillStyle = "#111111";
+        context.fillText(row.username, tableX + 24, y + 48);
+        context.fillText(
+          currencyFormatter.format(row.totalDebt),
+          tableX + participantWidth + 24,
+          y + 48,
+        );
+        context.fillText(
+          row.status,
+          tableX + participantWidth + totalWidth + 24,
+          y + 48,
+        );
+        y += INVOICE_EXPORT_ROW_HEIGHT;
+      });
+    }
+
+    if (billings.length > 0) {
+      y += 96;
+      context.fillStyle = "#ff9f1c";
+      context.fillRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+      context.strokeRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+      context.fillStyle = "#111111";
+      context.font = "900 26px Arial, Helvetica, sans-serif";
+      context.fillText("Category", tableX + 24, y + 48);
+      context.fillText("Amount", tableX + participantWidth + 24, y + 48);
+
+      y += INVOICE_EXPORT_ROW_HEIGHT;
+      context.font = "800 28px Arial, Helvetica, sans-serif";
+
+      billings.forEach((billing, index) => {
+        context.fillStyle = index % 2 === 0 ? "#ffffff" : "#fffbd1";
+        context.fillRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+        context.strokeRect(tableX, y, tableWidth, INVOICE_EXPORT_ROW_HEIGHT);
+        context.fillStyle = "#111111";
+        context.fillText(billing.category, tableX + 24, y + 48);
+        context.fillText(
+          currencyFormatter.format(billing.totalAmount),
+          tableX + participantWidth + 24,
+          y + 48,
+        );
+        y += INVOICE_EXPORT_ROW_HEIGHT;
+      });
+    }
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Unable to export invoice JPG."));
+          return;
+        }
+
+        resolve(blob);
+      },
+      "image/jpeg",
+      0.92,
+    );
+  });
 }
 
 function buildInitialGroup(
@@ -95,12 +308,17 @@ export default function BillingClient({ eventId }: Props) {
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [participants, setParticipants] = useState<BillingParticipant[]>([]);
   const [savedBillings, setSavedBillings] = useState<SavedBillingDraft[]>([]);
+  const [finalizedDebts, setFinalizedDebts] = useState<FinalizedDebt[]>([]);
+  const [finalizedBillings, setFinalizedBillings] = useState<
+    FinalizedBillingSummary[]
+  >([]);
   const [currentCategory, setCurrentCategory] = useState(DEFAULT_CATEGORIES[0]);
   const [currentAmount, setCurrentAmount] = useState(0);
   const [splitMode, setSplitMode] = useState<SplitMode>("BY_HOURS");
   const [currentGroup, setCurrentGroup] = useState<BillingMemberDraft[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const loadInvoiceSeed = useCallback(async () => {
@@ -118,12 +336,16 @@ export default function BillingClient({ eventId }: Props) {
 
     setEvent(data.event);
     setParticipants(data.participants ?? []);
+    setFinalizedDebts(data.debts ?? []);
+    setFinalizedBillings(data.billings ?? []);
     setCurrentGroup(buildInitialGroup(data.participants ?? []));
     setIsLoading(false);
   }, [eventId]);
 
   useEffect(() => {
-    loadInvoiceSeed();
+    queueMicrotask(() => {
+      void loadInvoiceSeed();
+    });
   }, [loadInvoiceSeed]);
 
   // useMemo keeps row and preview calculations in sync with amount/group/split mode changes.
@@ -141,6 +363,14 @@ export default function BillingClient({ eventId }: Props) {
   );
 
   const finalSummary: FinalSummaryRow[] = useMemo(() => {
+    if (finalizedDebts.length > 0) {
+      return finalizedDebts.map((debt) => ({
+        username: debt.username,
+        totalDebt: debt.totalDebt,
+        status: debt.status,
+      }));
+    }
+
     const summaryByUsername = new Map<string, number>();
 
     participants.forEach((participant) => {
@@ -160,9 +390,15 @@ export default function BillingClient({ eventId }: Props) {
       ([username, totalDebt]) => ({
         username,
         totalDebt,
+        status: "UNPAID",
       }),
     );
-  }, [participants, savedBillings]);
+  }, [finalizedDebts, participants, savedBillings]);
+
+  const hasInvoiceSummary =
+    finalizedDebts.length > 0 ||
+    finalizedBillings.length > 0 ||
+    savedBillings.length > 0;
 
   function updateEnabled(voterId: string, enabled: boolean) {
     setCurrentGroup((group) =>
@@ -206,6 +442,8 @@ export default function BillingClient({ eventId }: Props) {
       return;
     }
 
+    setFinalizedDebts([]);
+    setFinalizedBillings([]);
     setSavedBillings((billings) => [
       ...billings,
       {
@@ -221,9 +459,56 @@ export default function BillingClient({ eventId }: Props) {
   }
 
   function removeSavedBilling(id: string) {
+    setFinalizedDebts([]);
+    setFinalizedBillings([]);
     setSavedBillings((billings) =>
       billings.filter((billing) => billing.id !== id),
     );
+  }
+
+  async function copyInvoiceAsJpg() {
+    if (!hasInvoiceSummary) {
+      setMessage("Save or finalize an invoice before exporting it.");
+      return;
+    }
+
+    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+      setMessage(
+        "Your browser does not support copying image files to the clipboard.",
+      );
+      return;
+    }
+
+    if (ClipboardItem.supports && !ClipboardItem.supports("image/jpeg")) {
+      setMessage("Your browser does not support copying JPG files yet.");
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      const blob = await createInvoiceJpegBlob(
+        event,
+        finalSummary,
+        finalizedBillings,
+        new Date(),
+      );
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blob.type]: blob,
+        }),
+      ]);
+      setMessage("Invoice JPG copied to clipboard.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to copy invoice JPG to the clipboard.",
+      );
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   function finalizeInvoice() {
@@ -258,6 +543,7 @@ export default function BillingClient({ eventId }: Props) {
       );
 
       if (response.ok) {
+        setFinalizedDebts(data.debts ?? []);
         await loadInvoiceSeed();
       }
     });
@@ -388,7 +674,7 @@ export default function BillingClient({ eventId }: Props) {
             <div className="mt-6 space-y-3">
               {calculatedCurrentGroup.length === 0 ? (
                 <p className="border-[3px] border-black bg-[#ff9f1c] p-4 font-black shadow-[4px_4px_0_#111]">
-                  This event has no "Participating" voters yet, so billing
+                  This event has no &quot;Participating&quot; voters yet, so billing
                   cannot be created.
                 </p>
               ) : (
@@ -414,8 +700,32 @@ export default function BillingClient({ eventId }: Props) {
         </>
       ) : null}
 
+      {finalizedBillings.length > 0 ? (
+        <section className="brutal-card bg-[#fff7e6] p-6">
+          <h2 className="text-3xl font-black">Finalized categories</h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {finalizedBillings.map((billing) => (
+              <article
+                key={billing.id}
+                className="border-[3px] border-black bg-[#7dff7a] p-4 shadow-[5px_5px_0_#111]"
+              >
+                <h3 className="text-xl font-black">{billing.category}</h3>
+                <p className="font-bold">
+                  {currencyFormatter.format(billing.totalAmount)}
+                </p>
+                <p className="mt-2 text-sm font-black uppercase">
+                  {billing.details.length} participants billed
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="brutal-card bg-[#fff7e6] p-6">
-        <h2 className="text-3xl font-black">Estimated summary</h2>
+        <h2 className="text-3xl font-black">
+          {finalizedDebts.length > 0 ? "Final invoice" : "Estimated summary"}
+        </h2>
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[480px] border-[3px] border-black bg-white text-left font-bold">
             <thead className="bg-[#5dc9ff]">
@@ -434,20 +744,31 @@ export default function BillingClient({ eventId }: Props) {
                   <td className="border-[3px] border-black p-3 font-black">
                     {currencyFormatter.format(row.totalDebt)}
                   </td>
-                  <td className="border-[3px] border-black p-3">UNPAID</td>
+                  <td className="border-[3px] border-black p-3">
+                    {row.status}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <button
-          disabled={isPending || savedBillings.length === 0}
-          className="brutal-button mt-6 px-5 py-3 text-lg font-black disabled:opacity-60"
-          onClick={finalizeInvoice}
-        >
-          {isPending ? "Finalizing invoice..." : "Finalize & Publish invoice"}
-        </button>
+        <div className="mt-6 flex flex-wrap gap-4">
+          <button
+            disabled={isPending || savedBillings.length === 0}
+            className="brutal-button px-5 py-3 text-lg font-black disabled:opacity-60"
+            onClick={finalizeInvoice}
+          >
+            {isPending ? "Finalizing invoice..." : "Finalize & Publish invoice"}
+          </button>
+          <button
+            disabled={isExporting || !hasInvoiceSummary}
+            className="brutal-button bg-[#5dc9ff] px-5 py-3 text-lg font-black disabled:opacity-60"
+            onClick={copyInvoiceAsJpg}
+          >
+            {isExporting ? "Copying JPG..." : "Copy invoice JPG"}
+          </button>
+        </div>
       </section>
     </section>
   );
