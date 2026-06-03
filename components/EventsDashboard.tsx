@@ -134,6 +134,39 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
     });
   }
 
+  function deleteEvent(event: EventItem) {
+    const shouldDelete = window.confirm(
+      `Delete "${event.name}" and all related votes, invoices, billing details, and debts? This cannot be undone.`,
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    startTransition(async () => {
+      const response = await fetch(`/api/event/${event.id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+
+      setMessage(
+        data.message ??
+          (response.ok ? "Event deleted." : "Unable to delete event."),
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      if (events.length === 1 && page > 1) {
+        setPage(page - 1);
+        return;
+      }
+
+      await loadEvents();
+    });
+  }
+
   if (isLoading) {
     return (
       <section className="brutal-card bg-[#fff7e6] p-6">
@@ -248,7 +281,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                 </div>
               </section>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <button
                   disabled={isPending || !event.has_voted}
                   className="border-[3px] border-black bg-[#ff5fb7] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60"
@@ -257,12 +290,22 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                   Remove all votes from this event
                 </button>
                 {device?.is_admin ? (
-                  <a
-                    className="border-[3px] border-black bg-[#7dff7a] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111]"
-                    href={`/event/${event.id}/billing`}
-                  >
-                    Create invoice
-                  </a>
+                  <>
+                    <a
+                      className="border-[3px] border-black bg-[#7dff7a] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111]"
+                      href={`/event/${event.id}/billing`}
+                    >
+                      Create invoice
+                    </a>
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      className="border-[3px] border-black bg-[#ff3131] px-5 py-3 text-left text-lg font-black text-white shadow-[5px_5px_0_#111] disabled:opacity-60"
+                      onClick={() => deleteEvent(event)}
+                    >
+                      Delete event
+                    </button>
+                  </>
                 ) : null}
               </div>
             </article>
