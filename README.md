@@ -39,7 +39,7 @@ The MVP currently uses these tables:
    pnpm dev
    ```
 
-5. Create a sample event:
+5. Create a sample event from the admin UI at `/events`, or with the API:
 
    ```bash
    curl -X POST http://localhost:3000/api/events \

@@ -7,9 +7,12 @@ export default function VotePage() {
         <p className="mb-3 inline-block border-[3px] border-black bg-white px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
           Smash Bill
         </p>
-        <h1 className="text-5xl font-black leading-none md:text-6xl">
-          Vote lịch cầu lông
-        </h1>
+        <a
+          className="mt-5 inline-block border-[3px] border-black bg-[#7dff7a] px-4 py-3 font-black shadow-[5px_5px_0_#111]"
+          href="/events"
+        >
+          Admin tạo event
+        </a>
       </header>
 
       <EventsDashboard />
