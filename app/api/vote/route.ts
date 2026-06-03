@@ -14,6 +14,7 @@ type EventVoterRow = {
   id: string
   event_id: string
   voter_id: string
+  voted_choice: number
 }
 
 export async function POST(request: Request) {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Event voter payload không hợp lệ.' }, { status: 400 })
   }
 
-  const { eventId, choice } = parsed.data
+  const { eventId, votedChoice } = parsed.data
   const eventRows = (await sql`
     select id, choices
     from events
@@ -43,20 +44,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Không tìm thấy event.' }, { status: 404 })
   }
 
-  if (!event.choices.includes(choice)) {
+  const selectedChoice = event.choices[votedChoice]
+
+  if (!selectedChoice) {
     return NextResponse.json({ message: 'Option này không thuộc event.' }, { status: 400 })
   }
 
   const rows = (await sql`
-    insert into event_voters (event_id, voter_id)
-    values (${eventId}, ${device.id})
-    on conflict (event_id, voter_id) do update set event_id = excluded.event_id
-    returning id, event_id, voter_id
+    insert into event_voters (event_id, voter_id, voted_choice)
+    values (${eventId}, ${device.id}, ${votedChoice})
+    on conflict (event_id, voter_id, voted_choice) do update set voted_choice = excluded.voted_choice
+    returning id, event_id, voter_id, voted_choice
   `) as EventVoterRow[]
 
   return NextResponse.json(
     {
-      message: `Đã ghi nhận bạn vote option: ${choice}.`,
+      message: `Đã ghi nhận bạn vote option: ${selectedChoice}.`,
       eventVoter: rows[0],
     },
     { status: 201 },
@@ -77,13 +80,24 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ message: 'Event voter payload không hợp lệ.' }, { status: 400 })
   }
 
-  const { eventId } = parsed.data
+  const { eventId, votedChoice } = parsed.data
+
+  if (votedChoice === undefined) {
+    await sql`
+      delete from event_voters
+      where event_id = ${eventId}
+        and voter_id = ${device.id}
+    `
+
+    return NextResponse.json({ message: 'Đã xóa mọi lượt vote của bạn khỏi event này.' })
+  }
 
   await sql`
     delete from event_voters
     where event_id = ${eventId}
       and voter_id = ${device.id}
+      and voted_choice = ${votedChoice}
   `
 
-  return NextResponse.json({ message: 'Đã xóa lượt vote của bạn khỏi event này.' })
+  return NextResponse.json({ message: 'Đã xóa lượt vote option này của bạn.' })
 }

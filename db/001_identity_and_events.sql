@@ -48,8 +48,41 @@ create table if not exists event_voters (
   id uuid primary key default gen_random_uuid(),
   event_id uuid not null references events(id) on delete cascade,
   voter_id uuid not null references devices(id) on delete cascade,
-  constraint event_voters_event_voter_unique unique (event_id, voter_id)
+  voted_choice integer not null default 0,
+  constraint event_voters_voted_choice_non_negative_chk check (voted_choice >= 0),
+  constraint event_voters_event_voter_choice_unique unique (event_id, voter_id, voted_choice)
 );
+
+alter table event_voters add column if not exists voted_choice integer not null default 0;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'event_voters_event_voter_unique'
+  ) then
+    alter table event_voters drop constraint event_voters_event_voter_unique;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'event_voters_voted_choice_non_negative_chk'
+  ) then
+    alter table event_voters
+      add constraint event_voters_voted_choice_non_negative_chk check (voted_choice >= 0);
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'event_voters_event_voter_choice_unique'
+  ) then
+    alter table event_voters
+      add constraint event_voters_event_voter_choice_unique unique (event_id, voter_id, voted_choice);
+  end if;
+end $$;
 
 create table if not exists billings (
   id uuid primary key default gen_random_uuid(),
@@ -88,6 +121,7 @@ create table if not exists event_debts (
 create index if not exists devices_last_seen_at_idx on devices(last_seen_at);
 create index if not exists event_voters_event_id_idx on event_voters(event_id);
 create index if not exists event_voters_voter_id_idx on event_voters(voter_id);
+create index if not exists event_voters_event_choice_idx on event_voters(event_id, voted_choice);
 create index if not exists billings_event_id_idx on billings(event_id);
 create index if not exists billing_details_billing_id_idx on billing_details(billing_id);
 create index if not exists event_debts_event_id_idx on event_debts(event_id);

@@ -14,11 +14,12 @@ export const createEventSchema = z.object({
 
 export const eventVoterSchema = z.object({
   eventId: z.string().uuid(),
-  choice: z.string().trim().min(1).max(80),
+  votedChoice: z.number().int().min(0).max(9),
 })
 
 export const removeEventVoterSchema = z.object({
   eventId: z.string().uuid(),
+  votedChoice: z.number().int().min(0).max(9).optional(),
 })
 
 export const invoiceDetailSchema = z.object({

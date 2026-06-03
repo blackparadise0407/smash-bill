@@ -55,7 +55,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const participants = (await sql`
-    select d.id, d.username
+    select distinct d.id, d.username
     from event_voters ev
     join devices d on d.id = ev.voter_id
     where ev.event_id = ${eventId.data}
