@@ -21,7 +21,24 @@ export type SavedBillingDraft = {
   details: BillingMemberDraft[]
 }
 
+
+export type FinalizedBillingDetail = {
+  username: string
+  hours: number
+  amount: number
+}
+
+export type FinalizedBillingSummary = {
+  id: string
+  category: string
+  totalAmount: number
+  details: FinalizedBillingDetail[]
+}
+
+export type InvoiceStatus = 'UNPAID' | 'PAID'
+
 export type FinalSummaryRow = {
   username: string
   totalDebt: number
+  status: InvoiceStatus
 }
