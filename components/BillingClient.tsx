@@ -92,7 +92,7 @@ function drawWrappedText(
   return lines.length * lineHeight;
 }
 
-function createInvoiceJpegBlob(
+function createInvoicePngBlob(
   event: EventInfo | null,
   rows: FinalSummaryRow[],
   billings: FinalizedBillingSummary[],
@@ -246,13 +246,13 @@ function createInvoiceJpegBlob(
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          reject(new Error("Unable to export invoice JPG."));
+          reject(new Error("Unable to export invoice PNG."));
           return;
         }
 
         resolve(blob);
       },
-      "image/jpeg",
+      "image/png",
       0.92,
     );
   });
@@ -466,7 +466,7 @@ export default function BillingClient({ eventId }: Props) {
     );
   }
 
-  async function copyInvoiceAsJpg() {
+  async function copyInvoiceAsPng() {
     if (!hasInvoiceSummary) {
       setMessage("Save or finalize an invoice before exporting it.");
       return;
@@ -479,8 +479,8 @@ export default function BillingClient({ eventId }: Props) {
       return;
     }
 
-    if (ClipboardItem.supports && !ClipboardItem.supports("image/jpeg")) {
-      setMessage("Your browser does not support copying JPG files yet.");
+    if (ClipboardItem.supports && !ClipboardItem.supports("image/png")) {
+      setMessage("Your browser does not support copying PNG files yet.");
       return;
     }
 
@@ -499,12 +499,12 @@ export default function BillingClient({ eventId }: Props) {
           [blob.type]: blob,
         }),
       ]);
-      setMessage("Invoice JPG copied to clipboard.");
+      setMessage("Invoice PNG copied to clipboard.");
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Unable to copy invoice JPG to the clipboard.",
+          : "Unable to copy invoice PNG to the clipboard.",
       );
     } finally {
       setIsExporting(false);
@@ -755,9 +755,9 @@ export default function BillingClient({ eventId }: Props) {
           <button
             disabled={isExporting || !hasInvoiceSummary}
             className="brutal-button bg-[#5dc9ff] px-5 py-3 text-lg font-black disabled:opacity-60"
-            onClick={copyInvoiceAsJpg}
+            onClick={copyInvoiceAsPng}
           >
-            {isExporting ? "Copying JPG..." : "Copy invoice JPG"}
+            {isExporting ? "Copying PNG..." : "Copy invoice PNG"}
           </button>
         </div>
       </section>
