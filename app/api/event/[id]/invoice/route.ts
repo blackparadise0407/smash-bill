@@ -102,9 +102,9 @@ export async function POST(request: Request, context: RouteContext) {
   const billingsJson = JSON.stringify(parsed.data.billings)
 
   // Một câu SQL duy nhất với nhiều CTE để Neon thực thi atomically:
-  // 1. Xóa hóa đơn/công nợ cũ của event.
+  // 1. Xóa hóa đơn cũ của event.
   // 2. Insert lại billings và billing_details từ payload JSON.
-  // 3. Tổng hợp event_debts theo username.
+  // 3. Tổng hợp rồi upsert event_debts theo username để tránh xung đột unique khi chốt lại hóa đơn.
   // 4. Đổi trạng thái event sang COLLECTING để báo đang thu tiền.
   const result = (await sql`
     with
@@ -120,10 +120,6 @@ export async function POST(request: Request, context: RouteContext) {
         delete from billings
         where event_id = ${eventId.data}
       ),
-      deleted_debts as (
-        delete from event_debts
-        where event_id = ${eventId.data}
-      ),
       inserted_billings as (
         insert into billings (id, event_id, category, total_amount)
         select billing_id, ${eventId.data}, category, total_amount
@@ -133,11 +129,12 @@ export async function POST(request: Request, context: RouteContext) {
       inserted_details as (
         insert into billing_details (billing_id, username, hours, amount)
         select
-          input_billings.billing_id,
+          inserted_billings.id,
           detail.username,
           detail.hours,
           detail.amount
         from input_billings
+        join inserted_billings on inserted_billings.id = input_billings.billing_id
         cross join lateral jsonb_to_recordset(input_billings.details) as detail(
           username text,
           hours numeric,
@@ -145,11 +142,24 @@ export async function POST(request: Request, context: RouteContext) {
         )
         returning username, amount
       ),
-      inserted_debts as (
-        insert into event_debts (event_id, username, total_debt, status)
-        select ${eventId.data}, username, sum(amount), 'UNPAID'
+      invoice_debts as (
+        select username, sum(amount) as total_debt
         from inserted_details
         group by username
+      ),
+      deleted_stale_debts as (
+        delete from event_debts
+        where event_id = ${eventId.data}
+          and username not in (select username from invoice_debts)
+      ),
+      inserted_debts as (
+        insert into event_debts (event_id, username, total_debt, status)
+        select ${eventId.data}, username, total_debt, 'UNPAID'
+        from invoice_debts
+        on conflict (event_id, username) do update
+          set total_debt = excluded.total_debt,
+              status = 'UNPAID',
+              updated_at = now()
         returning username, total_debt, status
       ),
       updated_event as (
@@ -160,6 +170,7 @@ export async function POST(request: Request, context: RouteContext) {
       )
     select
       (select count(*) from inserted_billings) as billing_count,
+      (select status from updated_event) as event_status,
       coalesce(
         json_agg(
           json_build_object(
@@ -172,7 +183,11 @@ export async function POST(request: Request, context: RouteContext) {
         '[]'::json
       ) as debts
     from inserted_debts
-  `) as { billing_count: string | number; debts: { username: string; totalDebt: string | number; status: string }[] }[]
+  `) as {
+    billing_count: string | number
+    event_status: string | null
+    debts: { username: string; totalDebt: string | number; status: string }[]
+  }[]
 
   const invoice = result[0]
 
