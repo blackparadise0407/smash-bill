@@ -11,6 +11,12 @@ export default function VotePage() {
         <p className="mt-4 max-w-2xl text-lg font-bold">
           Danh sách lấy từ bảng events. Khi bạn bấm bất kỳ option nào, app validate option đó và tạo record trong bảng event_voters.
         </p>
+        <a
+          className="mt-5 inline-block border-[3px] border-black bg-[#7dff7a] px-4 py-3 font-black shadow-[5px_5px_0_#111]"
+          href="/events"
+        >
+          Admin tạo event
+        </a>
       </header>
 
       <EventsDashboard />

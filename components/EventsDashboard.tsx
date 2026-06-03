@@ -91,7 +91,8 @@ export default function EventsDashboard() {
         <div className="brutal-card bg-[#fff7e6] p-6">
           <h2 className="text-3xl font-black">Chưa có event nào</h2>
           <p className="mt-3 font-bold">
-            Tạo event đầu tiên bằng API <code className="bg-black px-2 py-1 text-white">POST /api/events</code> với
+            Tạo event đầu tiên tại <a className="underline" href="/events">/events</a> hoặc bằng API{' '}
+            <code className="bg-black px-2 py-1 text-white">POST /api/events</code> với
             name, choices và description.
           </p>
         </div>
