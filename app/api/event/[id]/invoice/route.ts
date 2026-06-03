@@ -20,6 +20,7 @@ type EventRow = {
   name: string;
   description: string | null;
   status: string;
+  event_date: string;
 };
 
 type ParticipantRow = {
@@ -69,7 +70,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const events = (await sql`
-    select id, name, description, status
+    select id, name, description, status, event_date
     from events
     where id = ${eventId.data}
     limit 1
@@ -118,7 +119,13 @@ export async function GET(_request: Request, context: RouteContext) {
   `) as BillingRow[];
 
   return NextResponse.json({
-    event: events[0],
+    event: events.map((event) => ({
+      id: event.id,
+      name: event.name,
+      description: event.description,
+      status: event.status,
+      eventDate: event.event_date,
+    }))[0],
     participants,
     billings: billings.map((billing) => ({
       id: billing.id,

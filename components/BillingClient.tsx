@@ -23,6 +23,7 @@ type EventInfo = {
   name: string;
   description: string | null;
   status: string;
+  eventDate: string;
 };
 
 type FinalizedDebt = {
@@ -147,7 +148,12 @@ function createInvoicePngBlob(
     context.font = "900 42px Arial, Helvetica, sans-serif";
     y += drawWrappedText(
       context,
-      event?.name ?? "Event billing",
+      (event?.name ?? "Event billing") +
+        ` ${new Date(event?.eventDate!).toLocaleDateString("vi-VN", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })}`,
       INVOICE_EXPORT_PADDING,
       y,
       INVOICE_EXPORT_WIDTH - INVOICE_EXPORT_PADDING * 2,
@@ -511,6 +517,31 @@ export default function BillingClient({ eventId }: Props) {
     }
   }
 
+  async function downloadInvoiceAsPng() {
+    try {
+      const blob = await createInvoicePngBlob(
+        event,
+        finalSummary,
+        finalizedBillings,
+        new Date(),
+      );
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${event?.name ?? "invoice"}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to download invoice PNG.",
+      );
+    }
+  }
+
   function finalizeInvoice() {
     if (savedBillings.length === 0) {
       setMessage(
@@ -713,8 +744,8 @@ export default function BillingClient({ eventId }: Props) {
         <div className="mt-6 space-y-3">
           {calculatedCurrentGroup.length === 0 ? (
             <p className="border-[3px] border-black bg-[#ff9f1c] p-4 font-black shadow-[4px_4px_0_#111]">
-              This event has no &quot;Participating&quot; voters yet, so billing cannot be
-              created.
+              This event has no &quot;Participating&quot; voters yet, so billing
+              cannot be created.
             </p>
           ) : (
             calculatedCurrentGroup.map((row) => (
@@ -808,9 +839,7 @@ export default function BillingClient({ eventId }: Props) {
                   <td className="border-[3px] border-black p-3">
                     <span
                       className={`inline-block border-[3px] border-black px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111] ${
-                        row.status === "PAID"
-                          ? "bg-[#7dff7a]"
-                          : "bg-[#ff9f1c]"
+                        row.status === "PAID" ? "bg-[#7dff7a]" : "bg-[#ff9f1c]"
                       }`}
                     >
                       {row.status}
@@ -836,6 +865,14 @@ export default function BillingClient({ eventId }: Props) {
             onClick={copyInvoiceAsPng}
           >
             {isExporting ? "Copying PNG..." : "Copy invoice PNG"}
+          </button>
+
+          <button
+            disabled={!hasInvoiceSummary}
+            className="brutal-button bg-[#5dc9ff] px-5 py-3 text-lg font-black disabled:opacity-60"
+            onClick={downloadInvoiceAsPng}
+          >
+            Download invoice PNG
           </button>
         </div>
       </section>
