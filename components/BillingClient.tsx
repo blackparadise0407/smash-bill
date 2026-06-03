@@ -290,129 +290,120 @@ export default function BillingClient({ eventId }: Props) {
           <p className="mt-4 text-lg font-bold">{event.description}</p>
         ) : null}
       </header>
-      {event?.status !== "COLLECTING" ? (
-        <>
-          <section className="brutal-card bg-[#fff7e6] p-6">
-            <h2 className="text-3xl font-black">Saved draft categories</h2>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {savedBillings.length === 0 ? (
-                <p className="font-bold">No draft categories yet.</p>
-              ) : (
-                savedBillings.map((billing) => (
-                  <article
-                    key={billing.id}
-                    className="border-[3px] border-black bg-[#7dff7a] p-4 shadow-[5px_5px_0_#111]"
+
+      <section className="brutal-card bg-[#fff7e6] p-6">
+        <h2 className="text-3xl font-black">Saved draft categories</h2>
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {savedBillings.length === 0 ? (
+            <p className="font-bold">No draft categories yet.</p>
+          ) : (
+            savedBillings.map((billing) => (
+              <article
+                key={billing.id}
+                className="border-[3px] border-black bg-[#7dff7a] p-4 shadow-[5px_5px_0_#111]"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-black">{billing.category}</h3>
+                    <p className="font-bold">
+                      {currencyFormatter.format(billing.totalAmount)}
+                    </p>
+                    <p className="text-sm font-black uppercase">
+                      {billing.splitMode === "BY_HOURS"
+                        ? "By hours"
+                        : "Split equally"}
+                    </p>
+                  </div>
+                  <button
+                    className="border-[3px] border-black bg-[#ff5fb7] px-3 py-1 font-black"
+                    onClick={() => removeSavedBilling(billing.id)}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-xl font-black">
-                          {billing.category}
-                        </h3>
-                        <p className="font-bold">
-                          {currencyFormatter.format(billing.totalAmount)}
-                        </p>
-                        <p className="text-sm font-black uppercase">
-                          {billing.splitMode === "BY_HOURS"
-                            ? "By hours"
-                            : "Split equally"}
-                        </p>
-                      </div>
-                      <button
-                        className="border-[3px] border-black bg-[#ff5fb7] px-3 py-1 font-black"
-                        onClick={() => removeSavedBilling(billing.id)}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </section>
+                    Remove
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
 
-          <section className="brutal-card bg-[#fff7e6] p-6">
-            <h2 className="text-3xl font-black">Create draft category</h2>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
-              <label className="block">
-                <span className="mb-2 block font-black uppercase">
-                  Category
-                </span>
-                <input
-                  list="billing-categories"
-                  value={currentCategory}
-                  onChange={(event) => setCurrentCategory(event.target.value)}
-                  className="brutal-input w-full px-4 py-3 font-bold"
-                />
-                <datalist id="billing-categories">
-                  {DEFAULT_CATEGORIES.map((category) => (
-                    <option key={category} value={category} />
-                  ))}
-                </datalist>
-              </label>
+      <section className="brutal-card bg-[#fff7e6] p-6">
+        <h2 className="text-3xl font-black">Create draft category</h2>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <label className="block">
+            <span className="mb-2 block font-black uppercase">Category</span>
+            <input
+              list="billing-categories"
+              value={currentCategory}
+              onChange={(event) => setCurrentCategory(event.target.value)}
+              className="brutal-input w-full px-4 py-3 font-bold"
+            />
+            <datalist id="billing-categories">
+              {DEFAULT_CATEGORIES.map((category) => (
+                <option key={category} value={category} />
+              ))}
+            </datalist>
+          </label>
 
-              <label className="block">
-                <span className="mb-2 block font-black uppercase">
-                  Total amount
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={currentAmount}
-                  onChange={(event) =>
-                    setCurrentAmount(Number(event.target.value || 0))
-                  }
-                  className="brutal-input w-full px-4 py-3 font-bold"
-                />
-              </label>
+          <label className="block">
+            <span className="mb-2 block font-black uppercase">
+              Total amount
+            </span>
+            <input
+              type="number"
+              min={0}
+              step={1000}
+              value={currentAmount}
+              onChange={(event) =>
+                setCurrentAmount(Number(event.target.value || 0))
+              }
+              className="brutal-input w-full px-4 py-3 font-bold"
+            />
+          </label>
 
-              <label className="block">
-                <span className="mb-2 block font-black uppercase">
-                  Split mode
-                </span>
-                <select
-                  value={splitMode}
-                  onChange={(event) =>
-                    setSplitMode(event.target.value as SplitMode)
-                  }
-                  className="brutal-input w-full px-4 py-3 font-bold"
-                >
-                  <option value="BY_HOURS">By hours</option>
-                  <option value="EQUAL">
-                    Split equally among selected members
-                  </option>
-                </select>
-              </label>
-            </div>
-
-            <div className="mt-6 space-y-3">
-              {calculatedCurrentGroup.length === 0 ? (
-                <p className="border-[3px] border-black bg-[#ff9f1c] p-4 font-black shadow-[4px_4px_0_#111]">
-                  This event has no "Participating" voters yet, so billing
-                  cannot be created.
-                </p>
-              ) : (
-                calculatedCurrentGroup.map((row) => (
-                  <BillingRow
-                    key={row.voterId}
-                    row={row}
-                    splitMode={splitMode}
-                    onToggle={updateEnabled}
-                    onHoursChange={updateHours}
-                  />
-                ))
-              )}
-            </div>
-
-            <button
-              className="brutal-button mt-6 px-5 py-3 text-lg font-black"
-              onClick={handleSaveCategory}
+          <label className="block">
+            <span className="mb-2 block font-black uppercase">Split mode</span>
+            <select
+              value={splitMode}
+              onChange={(event) =>
+                setSplitMode(event.target.value as SplitMode)
+              }
+              className="brutal-input w-full px-4 py-3 font-bold"
             >
-              Save category
-            </button>
-          </section>
-        </>
-      ) : null}
+              <option value="BY_HOURS">By hours</option>
+              <option value="EQUAL">
+                Split equally among selected members
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {calculatedCurrentGroup.length === 0 ? (
+            <p className="border-[3px] border-black bg-[#ff9f1c] p-4 font-black shadow-[4px_4px_0_#111]">
+              This event has no "Participating" voters yet, so billing cannot be
+              created.
+            </p>
+          ) : (
+            calculatedCurrentGroup.map((row) => (
+              <BillingRow
+                key={row.voterId}
+                row={row}
+                splitMode={splitMode}
+                onToggle={updateEnabled}
+                onHoursChange={updateHours}
+              />
+            ))
+          )}
+        </div>
+
+        <button
+          className="brutal-button mt-6 px-5 py-3 text-lg font-black"
+          onClick={handleSaveCategory}
+        >
+          Save category
+        </button>
+      </section>
 
       <section className="brutal-card bg-[#fff7e6] p-6">
         <h2 className="text-3xl font-black">Estimated summary</h2>

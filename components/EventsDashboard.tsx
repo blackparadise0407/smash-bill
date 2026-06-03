@@ -198,11 +198,9 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
             <article key={event.id} className="brutal-card bg-[#fff7e6] p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  {event.has_voted ? (
-                    <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-                      {event.voter_count} voted
-                    </p>
-                  ) : null}
+                  <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
+                    {event.voter_count} voted
+                  </p>
                   <p className="mb-2 w-fit border-[3px] border-black bg-[#7dff7a] px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111]">
                     {formatEventDate(event.event_date)}
                   </p>
