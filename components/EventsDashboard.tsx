@@ -292,7 +292,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <button
-                  disabled={isPending || !event.has_voted}
+                  disabled={isPending || !event.has_voted || eventExpired}
                   className="border-[3px] border-black bg-[#ff5fb7] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60"
                   onClick={() => removeVote(event.id)}
                 >
