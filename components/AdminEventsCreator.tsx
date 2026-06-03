@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  formatEventDate,
+  getTodayDateValue,
+  isEventExpired,
+} from "@/lib/event-date";
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
@@ -44,19 +49,6 @@ const DEFAULT_PAGINATION: PaginationState = {
   hasPreviousPage: false,
 };
 
-function getTodayDateValue() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function formatEventDate(eventDate: string) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${eventDate}T00:00:00Z`));
-}
-
 export default function AdminEventsCreator() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [choicesText, setChoicesText] = useState(DEFAULT_CHOICES.join("\n"));
@@ -68,7 +60,6 @@ export default function AdminEventsCreator() {
   const [isPending, startTransition] = useTransition();
 
   const loadEvents = useCallback(async () => {
-    setIsLoading(true);
     const params = new URLSearchParams({
       page: String(page),
       pageSize: String(EVENT_PAGE_SIZE),
@@ -88,10 +79,11 @@ export default function AdminEventsCreator() {
   }, [page]);
 
   useEffect(() => {
-    loadEvents();
+    void Promise.resolve().then(loadEvents);
   }, [loadEvents]);
 
   function goToPage(nextPage: number) {
+    setIsLoading(true);
     setPage(Math.max(1, Math.min(nextPage, pagination.totalPages)));
   }
 
@@ -245,79 +237,101 @@ export default function AdminEventsCreator() {
           </article>
         ) : null}
 
-        {events.map((event) => (
-          <article key={event.id} className="brutal-card bg-[#fff7e6] p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="mb-2 w-fit border-[3px] border-black bg-[#7dff7a] px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111]">
-                  {formatEventDate(event.event_date)}
-                </p>
-                <h3 className="text-2xl font-black">{event.name}</h3>
-                {event.description ? (
-                  <p className="mt-2 font-bold">{event.description}</p>
-                ) : null}
-              </div>
-              <span className="border-[3px] border-black bg-[#ff9f1c] px-3 py-2 font-black shadow-[4px_4px_0_#111]">
-                {event.voter_count} voters
-              </span>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {event.choices.map((choice, choiceIndex) => (
-                <span
-                  key={`${choice}-${choiceIndex}`}
-                  className="border-[3px] border-black bg-white px-3 py-1 font-black shadow-[3px_3px_0_#111]"
-                >
-                  {choice}
-                </span>
-              ))}
-            </div>
-            <section className="mt-5 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
-              <h4 className="text-xl font-black">Voters by option</h4>
-              <div className="mt-3 grid gap-3">
-                {event.vote_breakdown.map((choice) => (
-                  <div
-                    key={choice.choiceIndex}
-                    className="border-[3px] border-black bg-[#fff7e6] p-3"
-                  >
-                    <p className="font-black">
-                      #{choice.choiceIndex} · {choice.choiceText}
+        {events.map((event) => {
+          const eventExpired = isEventExpired(event.event_date);
+
+          return (
+            <article
+              key={event.id}
+              className={`brutal-card p-6 ${
+                eventExpired ? "bg-[#ffe0e0]" : "bg-[#fff7e6]"
+              }`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    <p
+                      className={`w-fit border-[3px] border-black px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111] ${
+                        eventExpired
+                          ? "bg-[#ff3131] text-white"
+                          : "bg-[#7dff7a]"
+                      }`}
+                    >
+                      {formatEventDate(event.event_date)}
                     </p>
-                    {choice.voters.length === 0 ? (
-                      <p className="mt-2 text-sm font-bold uppercase opacity-70">
-                        No one selected this option yet
+                    {eventExpired ? (
+                      <p className="w-fit border-[3px] border-black bg-white px-3 py-1 text-sm font-black uppercase text-[#ff3131] shadow-[3px_3px_0_#111]">
+                        Expired
                       </p>
-                    ) : (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {choice.voters.map((voter) => (
-                          <span
-                            key={voter.id}
-                            className="border-[2px] border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
-                          >
-                            {voter.username}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    ) : null}
                   </div>
+                  <h3 className="text-2xl font-black">{event.name}</h3>
+                  {event.description ? (
+                    <p className="mt-2 font-bold">{event.description}</p>
+                  ) : null}
+                </div>
+                <span className="border-[3px] border-black bg-[#ff9f1c] px-3 py-2 font-black shadow-[4px_4px_0_#111]">
+                  {event.voter_count} voters
+                </span>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {event.choices.map((choice, choiceIndex) => (
+                  <span
+                    key={`${choice}-${choiceIndex}`}
+                    className="border-[3px] border-black bg-white px-3 py-1 font-black shadow-[3px_3px_0_#111]"
+                  >
+                    {choice}
+                  </span>
                 ))}
               </div>
-            </section>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <a
-                className="border-[3px] border-black bg-[#5dc9ff] px-4 py-3 text-center font-black shadow-[4px_4px_0_#111]"
-                href={`/event/${event.id}/billing`}
-              >
-                Open billing
-              </a>
-              <a
-                className="border-[3px] border-black bg-[#7dff7a] px-4 py-3 text-center font-black shadow-[4px_4px_0_#111]"
-                href="/vote"
-              >
-                Open voting
-              </a>
-            </div>
-          </article>
-        ))}
+              <section className="mt-5 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
+                <h4 className="text-xl font-black">Voters by option</h4>
+                <div className="mt-3 grid gap-3">
+                  {event.vote_breakdown.map((choice) => (
+                    <div
+                      key={choice.choiceIndex}
+                      className="border-[3px] border-black bg-[#fff7e6] p-3"
+                    >
+                      <p className="font-black">
+                        #{choice.choiceIndex} · {choice.choiceText}
+                      </p>
+                      {choice.voters.length === 0 ? (
+                        <p className="mt-2 text-sm font-bold uppercase opacity-70">
+                          No one selected this option yet
+                        </p>
+                      ) : (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {choice.voters.map((voter) => (
+                            <span
+                              key={voter.id}
+                              className="border-[2px] border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
+                            >
+                              {voter.username}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <a
+                  className="border-[3px] border-black bg-[#5dc9ff] px-4 py-3 text-center font-black shadow-[4px_4px_0_#111]"
+                  href={`/event/${event.id}/billing`}
+                >
+                  Open billing
+                </a>
+                <a
+                  className="border-[3px] border-black bg-[#7dff7a] px-4 py-3 text-center font-black shadow-[4px_4px_0_#111]"
+                  href="/vote"
+                >
+                  Open voting
+                </a>
+              </div>
+            </article>
+          );
+        })}
 
         {events.length > 0 ? (
           <nav

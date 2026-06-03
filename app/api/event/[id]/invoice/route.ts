@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
 import { getAuthenticatedDevice } from "@/lib/auth/session";
-import { invoicePayloadSchema } from "@/lib/validation";
+import {
+  invoiceDebtStatusSchema,
+  invoicePayloadSchema,
+} from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -279,5 +282,101 @@ export async function POST(request: Request, context: RouteContext) {
       ...debt,
       totalDebt: Number(debt.totalDebt),
     })),
+  });
+}
+
+export async function PATCH(request: Request, context: RouteContext) {
+  const device = await getAuthenticatedDevice();
+
+  if (!device) {
+    return NextResponse.json(
+      { message: "You do not have a valid session." },
+      { status: 401 },
+    );
+  }
+
+  if (!device.is_admin) {
+    return NextResponse.json(
+      { message: "You do not have admin permission." },
+      { status: 403 },
+    );
+  }
+
+  const { id } = await context.params;
+  const eventId = eventIdSchema.safeParse(id);
+
+  if (!eventId.success) {
+    return NextResponse.json({ message: "Invalid event id." }, { status: 400 });
+  }
+
+  const body = await request.json().catch(() => null);
+  const parsed = invoiceDebtStatusSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: "Invalid payment status payload." },
+      { status: 400 },
+    );
+  }
+
+  const result = (await sql`
+    with updated_debt as (
+      update event_debts
+      set status = ${parsed.data.status},
+          updated_at = now()
+      where event_id = ${eventId.data}
+        and username = ${parsed.data.username}
+      returning username, total_debt, status
+    ),
+    event_status as (
+      update events
+      set status = case
+        when ${parsed.data.status} = 'UNPAID'
+          or exists (
+            select 1
+            from event_debts
+            where event_id = ${eventId.data}
+              and username <> ${parsed.data.username}
+              and status = 'UNPAID'
+          ) then 'COLLECTING'
+        else 'SETTLED'
+      end
+      where id = ${eventId.data}
+        and exists (select 1 from updated_debt)
+      returning status
+    )
+    select
+      updated_debt.username,
+      updated_debt.total_debt,
+      updated_debt.status,
+      (select status from event_status) as event_status
+    from updated_debt
+  `) as {
+    username: string;
+    total_debt: string | number;
+    status: "UNPAID" | "PAID";
+    event_status: string | null;
+  }[];
+
+  const updatedDebt = result[0];
+
+  if (!updatedDebt) {
+    return NextResponse.json(
+      { message: "Debt row not found for this event." },
+      { status: 404 },
+    );
+  }
+
+  return NextResponse.json({
+    message:
+      updatedDebt.status === "PAID"
+        ? `${updatedDebt.username} marked as paid.`
+        : `${updatedDebt.username} marked as unpaid.`,
+    debt: {
+      username: updatedDebt.username,
+      totalDebt: Number(updatedDebt.total_debt),
+      status: updatedDebt.status,
+    },
+    eventStatus: updatedDebt.event_status,
   });
 }
