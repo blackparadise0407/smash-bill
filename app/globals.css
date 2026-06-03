@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f13d;
+  --foreground: #111111;
+  --panel: #fff7e6;
+  --ink: #111111;
+  --pink: #ff5fb7;
+  --green: #7dff7a;
+  --blue: #5dc9ff;
+  --orange: #ff9f1c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    linear-gradient(90deg, rgba(17, 17, 17, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(17, 17, 17, 0.08) 1px, transparent 1px),
+    var(--background);
+  background-size: 28px 28px;
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--pink);
+  color: var(--ink);
+}
+
+.brutal-card {
+  border: 4px solid var(--ink);
+  background: var(--panel);
+  box-shadow: 10px 10px 0 var(--ink);
+}
+
+.brutal-button {
+  border: 3px solid var(--ink);
+  background: var(--green);
+  color: var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.brutal-button:hover:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.brutal-button:active:not(:disabled) {
+  transform: translate(5px, 5px);
+  box-shadow: none;
+}
+
+.brutal-input {
+  border: 3px solid var(--ink);
+  background: white;
+  box-shadow: 4px 4px 0 var(--ink);
+  outline: none;
+}
+
+.brutal-input:focus {
+  background: #fffbd1;
+}
