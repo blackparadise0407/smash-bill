@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthenticatedDevice } from "@/lib/auth/session";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
 type VoteBreakdown = {
@@ -22,7 +23,11 @@ type EventItem = {
   vote_breakdown: VoteBreakdown[];
 };
 
-export default function EventsDashboard() {
+type EventsDashboardProps = {
+  device: AuthenticatedDevice | null;
+};
+
+export default function EventsDashboard({ device }: EventsDashboardProps) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -117,9 +122,11 @@ export default function EventsDashboard() {
             <article key={event.id} className="brutal-card bg-[#fff7e6] p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-                    {event.voter_count} thiết bị đã vote
-                  </p>
+                  {event.has_voted ? (
+                    <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
+                      {event.voter_count} người đã vote
+                    </p>
+                  ) : null}
                   <h2 className="text-3xl font-black">{event.name}</h2>
                   {event.description ? (
                     <p className="mt-3 font-bold">{event.description}</p>
@@ -151,7 +158,9 @@ export default function EventsDashboard() {
                       >
                         <span className="block">{choice}</span>
                         <span className="mt-1 block text-sm uppercase">
-                          {hasVotedChoice ? "Đã chọn · bấm để bỏ" : "Bấm để chọn"}
+                          {hasVotedChoice
+                            ? "Đã chọn · bấm để bỏ"
+                            : "Bấm để chọn"}
                         </span>
                       </button>
                     );
@@ -199,12 +208,14 @@ export default function EventsDashboard() {
                 >
                   Xóa tất cả vote khỏi event
                 </button>
-                <a
-                  className="border-[3px] border-black bg-[#7dff7a] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111]"
-                  href={`/event/${event.id}/billing`}
-                >
-                  Tạo hóa đơn
-                </a>
+                {device?.is_admin ? (
+                  <a
+                    className="border-[3px] border-black bg-[#7dff7a] px-5 py-3 text-lg font-black shadow-[5px_5px_0_#111]"
+                    href={`/event/${event.id}/billing`}
+                  >
+                    Tạo hóa đơn
+                  </a>
+                ) : null}
               </div>
             </article>
           );

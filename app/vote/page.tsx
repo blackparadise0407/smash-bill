@@ -20,7 +20,7 @@ export default async function VotePage() {
         ) : null}
       </header>
 
-      <EventsDashboard />
+      <EventsDashboard device={device} />
     </main>
   );
 }

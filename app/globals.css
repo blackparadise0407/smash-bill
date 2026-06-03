@@ -46,7 +46,9 @@ body {
   background: var(--green);
   color: var(--ink);
   box-shadow: 5px 5px 0 var(--ink);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .brutal-button:hover:not(:disabled) {
