@@ -8,8 +8,8 @@ export default function VotePage() {
           Smash Bill
         </p>
         <a
-          className="mt-5 inline-block border-[3px] border-black bg-[#7dff7a] px-4 py-3 font-black shadow-[5px_5px_0_#111]"
-          href="/events"
+          className="mt-5 block w-fit border-[3px] border-black bg-[#7dff7a] px-4 py-3 font-black shadow-[5px_5px_0_#111]"
+          href="/event"
         >
           Admin tạo event
         </a>

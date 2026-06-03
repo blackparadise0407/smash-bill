@@ -1,86 +1,89 @@
-'use client'
+"use client";
 
-import type { FormEvent } from 'react'
-import { useCallback, useEffect, useState, useTransition } from 'react'
+import type { FormEvent } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 
 type EventItem = {
-  id: string
-  name: string
-  choices: string[]
-  description: string | null
-  voter_count: number
-  has_voted: boolean
-}
+  id: string;
+  name: string;
+  choices: string[];
+  description: string | null;
+  voter_count: number;
+  has_voted: boolean;
+};
 
-const DEFAULT_CHOICES = ['Có đi', 'Không đi']
+const DEFAULT_CHOICES = ["8h-10h", "9h-11h"];
 
 export default function AdminEventsCreator() {
-  const [events, setEvents] = useState<EventItem[]>([])
-  const [choicesText, setChoicesText] = useState(DEFAULT_CHOICES.join('\n'))
-  const [message, setMessage] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isPending, startTransition] = useTransition()
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [choicesText, setChoicesText] = useState(DEFAULT_CHOICES.join("\n"));
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
 
   const loadEvents = useCallback(async () => {
-    setIsLoading(true)
-    const response = await fetch('/api/events', { cache: 'no-store' })
-    const data = await response.json()
+    setIsLoading(true);
+    const response = await fetch("/api/event", { cache: "no-store" });
+    const data = await response.json();
 
     if (!response.ok) {
-      setMessage(data.message ?? 'Không thể tải danh sách event.')
-      setIsLoading(false)
-      return
+      setMessage(data.message ?? "Không thể tải danh sách event.");
+      setIsLoading(false);
+      return;
     }
 
-    setEvents(data.events ?? [])
-    setIsLoading(false)
-  }, [])
+    setEvents(data.events ?? []);
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
-    loadEvents()
-  }, [loadEvents])
+    loadEvents();
+  }, [loadEvents]);
 
   function createEvent(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = event.currentTarget
-    const formData = new FormData(form)
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const choices = choicesText
-      .split('\n')
+      .split("\n")
       .map((choice) => choice.trim())
-      .filter(Boolean)
+      .filter(Boolean);
 
     startTransition(async () => {
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: String(formData.get('name') ?? '').trim(),
-          description: String(formData.get('description') ?? '').trim() || undefined,
+          name: String(formData.get("name") ?? "").trim(),
+          description:
+            String(formData.get("description") ?? "").trim() || undefined,
           choices,
         }),
-      })
-      const data = await response.json()
+      });
+      const data = await response.json();
 
       if (!response.ok) {
-        setMessage(data.message ?? 'Không thể tạo event.')
-        return
+        setMessage(data.message ?? "Không thể tạo event.");
+        return;
       }
 
-      form.reset()
-      setChoicesText(DEFAULT_CHOICES.join('\n'))
-      setMessage(`Đã tạo event: ${data.event.name}`)
-      await loadEvents()
-    })
+      form.reset();
+      setChoicesText(DEFAULT_CHOICES.join("\n"));
+      setMessage(`Đã tạo event: ${data.event.name}`);
+      await loadEvents();
+    });
   }
 
   return (
     <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-      <form onSubmit={createEvent} className="brutal-card h-fit bg-[#fff7e6] p-6">
+      <form
+        onSubmit={createEvent}
+        className="brutal-card h-fit bg-[#fff7e6] p-6"
+      >
         <p className="mb-4 inline-block border-[3px] border-black bg-[#7dff7a] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
           Admin form
         </p>
         <h2 className="text-3xl font-black">Tạo event mới</h2>
-        <p className="mt-3 font-bold">Nhập tên buổi cầu lông, mô tả ngắn và mỗi lựa chọn trên một dòng.</p>
 
         <div className="mt-6 space-y-5">
           <label className="block">
@@ -107,7 +110,9 @@ export default function AdminEventsCreator() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block font-black uppercase">Options vote</span>
+            <span className="mb-2 block font-black uppercase">
+              Options vote
+            </span>
             <textarea
               required
               rows={5}
@@ -125,7 +130,7 @@ export default function AdminEventsCreator() {
           disabled={isPending}
           className="brutal-button mt-6 w-full px-5 py-3 text-lg font-black disabled:opacity-60"
         >
-          {isPending ? 'Đang tạo event...' : 'Tạo event'}
+          {isPending ? "Đang tạo event..." : "Tạo event"}
         </button>
 
         {message ? (
@@ -162,7 +167,9 @@ export default function AdminEventsCreator() {
         {!isLoading && events.length === 0 ? (
           <article className="brutal-card bg-[#fff7e6] p-6">
             <h3 className="text-2xl font-black">Chưa có event nào</h3>
-            <p className="mt-3 font-bold">Tạo event đầu tiên bằng form bên trái.</p>
+            <p className="mt-3 font-bold">
+              Tạo event đầu tiên bằng form bên trái.
+            </p>
           </article>
         ) : null}
 
@@ -171,7 +178,9 @@ export default function AdminEventsCreator() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h3 className="text-2xl font-black">{event.name}</h3>
-                {event.description ? <p className="mt-2 font-bold">{event.description}</p> : null}
+                {event.description ? (
+                  <p className="mt-2 font-bold">{event.description}</p>
+                ) : null}
               </div>
               <span className="border-[3px] border-black bg-[#ff9f1c] px-3 py-2 font-black shadow-[4px_4px_0_#111]">
                 {event.voter_count} voters
@@ -205,5 +214,5 @@ export default function AdminEventsCreator() {
         ))}
       </div>
     </section>
-  )
+  );
 }

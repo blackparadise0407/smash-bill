@@ -39,10 +39,10 @@ The MVP currently uses these tables:
    pnpm dev
    ```
 
-5. Create a sample event from the admin UI at `/events`, or with the API:
+5. Create a sample event from the admin UI at `/event`, or with the API:
 
    ```bash
-   curl -X POST http://localhost:3000/api/events \
+   curl -X POST http://localhost:3000/api/event \
      -H 'Content-Type: application/json' \
      -d '{"name":"Cầu lông thứ 3 · 19:00-21:00","choices":["Có đi","Không đi"],"description":"Sân ABC · 2 giờ"}'
    ```

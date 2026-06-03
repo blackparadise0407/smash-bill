@@ -19,7 +19,7 @@ export default function EventsDashboard() {
 
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
-    const response = await fetch("/api/events", { cache: "no-store" });
+    const response = await fetch("/api/event", { cache: "no-store" });
     const data = await response.json();
 
     if (!response.ok) {
@@ -118,9 +118,6 @@ export default function EventsDashboard() {
             </div>
 
             <div className="mt-6">
-              <p className="mb-3 font-black uppercase tracking-wider">
-                Chọn một option để ghi nhận voter
-              </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {event.choices.map((choice) => (
                   <button
