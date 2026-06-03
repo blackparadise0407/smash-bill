@@ -5,6 +5,7 @@ create table if not exists devices (
   device_uuid_hash text not null,
   fingerprint_hash text not null,
   username text not null,
+  is_admin boolean not null default false,
   user_agent text,
   first_ip inet,
   last_ip inet,
@@ -117,6 +118,8 @@ create table if not exists event_debts (
   constraint event_debts_status_chk check (status in ('UNPAID', 'PAID')),
   constraint event_debts_event_username_unique unique (event_id, username)
 );
+
+alter table devices add column if not exists is_admin boolean not null default false;
 
 create index if not exists devices_last_seen_at_idx on devices(last_seen_at);
 create index if not exists event_voters_event_id_idx on event_voters(event_id);

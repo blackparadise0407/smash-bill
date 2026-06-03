@@ -9,6 +9,7 @@ export type AuthenticatedDevice = {
   device_uuid_hash: string
   fingerprint_hash: string
   session_version: number
+  is_admin: boolean
 }
 
 export async function getAuthenticatedDevice() {
@@ -26,7 +27,7 @@ export async function getAuthenticatedDevice() {
   }
 
   const rows = (await sql`
-    select id, username, device_uuid_hash, fingerprint_hash, session_version
+    select id, username, device_uuid_hash, fingerprint_hash, session_version, is_admin
     from devices
     where id = ${session.deviceId}
     limit 1

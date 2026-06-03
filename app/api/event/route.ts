@@ -98,6 +98,16 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const device = await getAuthenticatedDevice()
+
+  if (!device) {
+    return NextResponse.json({ message: 'Bạn chưa có session hợp lệ.' }, { status: 401 })
+  }
+
+  if (!device.is_admin) {
+    return NextResponse.json({ message: 'Bạn không có quyền admin.' }, { status: 403 })
+  }
+
   const body = await request.json().catch(() => null)
   const parsed = createEventSchema.safeParse(body)
 
