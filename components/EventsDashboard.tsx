@@ -261,7 +261,12 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                       key={choice.choiceIndex}
                       className="border-[3px] border-black bg-[#fff7e6] p-3"
                     >
-                      <p className="font-black">{choice.choiceText}</p>
+                      <p className="font-black">
+                        {choice.choiceText}{" "}
+                        {choice.voters.length > 0 ? (
+                          <small>({choice.voters.length} votes)</small>
+                        ) : null}
+                      </p>
                       {choice.voters.length === 0 ? (
                         <p className="mt-2 text-sm font-bold uppercase opacity-70">
                           No one selected this option yet
