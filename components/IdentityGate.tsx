@@ -97,12 +97,12 @@ export default function IdentityGate() {
     return (
       <section className="brutal-card bg-[#fff7e6] p-6">
         <p className="mb-4 inline-block border-[3px] border-black bg-[#5dc9ff] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-          Handshake
+          Court check-in
         </p>
-        <h2 className="text-3xl font-black">Identifying device...</h2>
+        <h2 className="text-3xl font-black">Warming up your device...</h2>
         <p className="mt-4 font-bold">
-          Reading browser fingerprint and device UUID to issue an internal
-          session.
+          Reading your device grip so your badminton votes and court bills
+          stay attached to the right player.
         </p>
       </section>
     );
@@ -129,12 +129,12 @@ export default function IdentityGate() {
   return (
     <section className="brutal-card bg-[#fff7e6] p-6">
       <p className="mb-4 inline-block border-[3px] border-black bg-[#7dff7a] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-        First time?
+        New player?
       </p>
-      <h2 className="text-3xl font-black">Enter display name</h2>
+      <h2 className="text-3xl font-black">Choose your court name</h2>
       <p className="mt-4 font-bold">
-        This name will be linked to your device for voting and bill splitting in
-        the group.
+        This name shows up beside your slot votes, court-fee splits, and
+        post-rally payment status.
       </p>
 
       <form action={submitUsername} className="mt-6 space-y-5">
@@ -145,7 +145,7 @@ export default function IdentityGate() {
             required
             minLength={1}
             maxLength={80}
-            placeholder="Example: Alex / Sam / Jordan"
+            placeholder="Example: Alex Smash / Sam Drop / Jordan"
             className="brutal-input w-full px-4 py-3 text-lg font-bold"
           />
         </label>
@@ -153,7 +153,7 @@ export default function IdentityGate() {
           disabled={isPending}
           className="brutal-button w-full px-5 py-3 text-lg font-black disabled:opacity-60"
         >
-          {isPending ? "Creating session..." : "Go vote now"}
+          {isPending ? "Stringing racket..." : "Join the rally"}
         </button>
       </form>
     </section>

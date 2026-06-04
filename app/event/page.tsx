@@ -11,10 +11,10 @@ export default async function EventsAdminPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-5 py-8 md:px-8">
-      <header className="brutal-card mb-8 bg-[#ff5fb7] p-6">
+      <header className="brutal-card court-card mb-8 bg-[#ff5fb7] p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="mb-3 inline-block border-[3px] border-black bg-white px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
+            <p className="shuttle-badge mb-3 inline-flex border-[3px] border-black bg-white px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
               Admin events
             </p>
             <h1 className="text-5xl font-black leading-none md:text-6xl">
@@ -29,8 +29,8 @@ export default async function EventsAdminPage() {
           </a>
         </div>
         <p className="mt-4 max-w-3xl text-lg font-bold">
-          Admin page for creating new events through the existing API, then
-          opening voting or billing for each event.
+          Set up each badminton meetup with court-time options first, then open
+          voting or settle the court, shuttle, and snack bill after play.
         </p>
       </header>
 

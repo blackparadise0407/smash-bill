@@ -22,10 +22,12 @@ html {
 body {
   min-height: 100vh;
   background:
+    radial-gradient(circle at 12% 18%, rgba(255, 95, 183, 0.22) 0 90px, transparent 92px),
+    radial-gradient(circle at 88% 12%, rgba(93, 201, 255, 0.24) 0 120px, transparent 122px),
     linear-gradient(90deg, rgba(17, 17, 17, 0.08) 1px, transparent 1px),
     linear-gradient(rgba(17, 17, 17, 0.08) 1px, transparent 1px),
     var(--background);
-  background-size: 28px 28px;
+  background-size: auto, auto, 28px 28px, 28px 28px, auto;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -70,4 +72,44 @@ body {
 
 .brutal-input:focus {
   background: #fffbd1;
+}
+
+.court-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.court-card::before {
+  position: absolute;
+  inset: 14px;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(17, 17, 17, 0.16) 49% 51%, transparent 51%),
+    linear-gradient(rgba(17, 17, 17, 0.12) 3px, transparent 3px),
+    linear-gradient(90deg, rgba(17, 17, 17, 0.12) 3px, transparent 3px);
+  background-size: 100% 100%, 100% 33%, 33% 100%;
+  opacity: 0.55;
+}
+
+.court-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.shuttle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.shuttle-badge::before {
+  content: "🏸";
+  filter: drop-shadow(2px 2px 0 rgba(17, 17, 17, 0.45));
+}
+
+.rally-hint {
+  border: 3px dashed var(--ink);
+  background: #fffbd1;
+  box-shadow: 4px 4px 0 var(--ink);
 }

@@ -37,7 +37,7 @@ type PaginationState = {
   hasPreviousPage: boolean;
 };
 
-const DEFAULT_CHOICES = ["8h-10h", "9h-11h"];
+const DEFAULT_CHOICES = ["Court 1 · 8h-10h", "Court 2 · 9h-11h"];
 const EVENT_PAGE_SIZE = 5;
 
 const DEFAULT_PAGINATION: PaginationState = {
@@ -117,7 +117,7 @@ export default function AdminEventsCreator() {
 
       form.reset();
       setChoicesText(DEFAULT_CHOICES.join("\n"));
-      setMessage(`Event created: ${data.event.name}`);
+      setMessage(`Rally created: ${data.event.name}`);
 
       if (page === 1) {
         await loadEvents();
@@ -134,25 +134,25 @@ export default function AdminEventsCreator() {
         className="brutal-card h-fit bg-[#fff7e6] p-6"
       >
         <p className="mb-4 inline-block border-[3px] border-black bg-[#7dff7a] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-          Admin form
+          Match setup
         </p>
-        <h2 className="text-3xl font-black">Create new event</h2>
+        <h2 className="text-3xl font-black">Schedule a badminton rally</h2>
 
         <div className="mt-6 space-y-5">
           <label className="block">
-            <span className="mb-2 block font-black uppercase">Event name</span>
+            <span className="mb-2 block font-black uppercase">Rally name</span>
             <input
               name="name"
               required
               minLength={1}
               maxLength={160}
-              placeholder="Example: Tuesday badminton · 19:00-21:00"
+              placeholder="Example: Tuesday doubles · Court A · 19:00-21:00"
               className="brutal-input w-full px-4 py-3 text-lg font-bold"
             />
           </label>
 
           <label className="block">
-            <span className="mb-2 block font-black uppercase">Event date</span>
+            <span className="mb-2 block font-black uppercase">Match date</span>
             <input
               name="eventDate"
               type="date"
@@ -163,19 +163,19 @@ export default function AdminEventsCreator() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block font-black uppercase">Description</span>
+            <span className="mb-2 block font-black uppercase">Court notes</span>
             <textarea
               name="description"
               maxLength={1000}
               rows={4}
-              placeholder="Court, time, internal notes..."
+              placeholder="Court address, skill level, shuttle plan, parking notes..."
               className="brutal-input w-full resize-y px-4 py-3 text-lg font-bold"
             />
           </label>
 
           <label className="block">
             <span className="mb-2 block font-black uppercase">
-              Options vote
+              Court-time options
             </span>
             <textarea
               required
@@ -184,8 +184,8 @@ export default function AdminEventsCreator() {
               onChange={(event) => setChoicesText(event.target.value)}
               className="brutal-input w-full resize-y px-4 py-3 text-lg font-bold"
             />
-            <span className="mt-2 block text-sm font-black uppercase">
-              Up to 10 options, each option up to 80 characters.
+            <span className="rally-hint mt-3 block p-3 text-sm font-black uppercase">
+              Hint: one court-time option per line, up to 10 options, each up to 80 characters.
             </span>
           </label>
         </div>
@@ -194,7 +194,7 @@ export default function AdminEventsCreator() {
           disabled={isPending}
           className="brutal-button mt-6 w-full px-5 py-3 text-lg font-black disabled:opacity-60"
         >
-          {isPending ? "Creating event..." : "Create event"}
+          {isPending ? "Booking rally..." : "Create rally"}
         </button>
 
         {message ? (
@@ -209,30 +209,30 @@ export default function AdminEventsCreator() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="mb-3 inline-block border-[3px] border-black bg-white px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-                Event list
+                Rally board
               </p>
-              <h2 className="text-3xl font-black">Existing events</h2>
+              <h2 className="text-3xl font-black">Upcoming court votes</h2>
             </div>
             <a
               className="border-[3px] border-black bg-[#7dff7a] px-4 py-2 font-black shadow-[4px_4px_0_#111]"
               href="/vote"
             >
-              View voting page
+              View player votes
             </a>
           </div>
         </div>
 
         {isLoading ? (
           <article className="brutal-card bg-[#fff7e6] p-6">
-            <h3 className="text-2xl font-black">Loading events...</h3>
+            <h3 className="text-2xl font-black">Loading court board...</h3>
           </article>
         ) : null}
 
         {!isLoading && events.length === 0 ? (
           <article className="brutal-card bg-[#fff7e6] p-6">
-            <h3 className="text-2xl font-black">No events yet</h3>
+            <h3 className="text-2xl font-black">No rallies yet</h3>
             <p className="mt-3 font-bold">
-              Create your first event using the form on the left.
+              Create the first badminton rally using the match setup form.
             </p>
           </article>
         ) : null}
