@@ -304,7 +304,7 @@ export default function AdminEventsCreator() {
                           {choice.voters.map((voter) => (
                             <span
                               key={voter.id}
-                              className="border-[2px] border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
+                              className="border-2 border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
                             >
                               {voter.username}
                             </span>

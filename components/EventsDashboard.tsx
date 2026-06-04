@@ -194,37 +194,32 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                 eventExpired ? "bg-[#ffe0e0]" : "bg-[#fff7e6]"
               }`}
             >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
-                    {event.voter_count} voted
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="mb-3 inline-block border-[3px] border-black bg-[#ff9f1c] px-3 py-1 font-black uppercase shadow-[4px_4px_0_#111]">
+                  {event.voter_count} voted{" "}
+                  {!event.has_voted ? <small>(Not voted)</small> : null}
+                </div>
+                <div className="grow"></div>
+                <div className="mb-2 flex flex-wrap gap-2">
+                  <p
+                    className={`w-fit border-[3px] border-black px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111] ${
+                      eventExpired ? "bg-[#ff3131] text-white" : "bg-[#7dff7a]"
+                    }`}
+                  >
+                    {formatEventDate(event.event_date)}
                   </p>
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    <p
-                      className={`w-fit border-[3px] border-black px-3 py-1 text-sm font-black uppercase shadow-[3px_3px_0_#111] ${
-                        eventExpired
-                          ? "bg-[#ff3131] text-white"
-                          : "bg-[#7dff7a]"
-                      }`}
-                    >
-                      {formatEventDate(event.event_date)}
+                  {eventExpired ? (
+                    <p className="w-fit border-[3px] border-black bg-white px-3 py-1 text-sm font-black uppercase text-[#ff3131] shadow-[3px_3px_0_#111]">
+                      Expired
                     </p>
-                    {eventExpired ? (
-                      <p className="w-fit border-[3px] border-black bg-white px-3 py-1 text-sm font-black uppercase text-[#ff3131] shadow-[3px_3px_0_#111]">
-                        Expired
-                      </p>
-                    ) : null}
-                  </div>
-                  <h2 className="text-3xl font-black">{event.name}</h2>
-                  {event.description ? (
-                    <p className="mt-3 font-bold">{event.description}</p>
                   ) : null}
                 </div>
-
-                <div className="border-[3px] border-black bg-white px-3 py-2 font-black shadow-[4px_4px_0_#111]">
-                  {event.has_voted ? "Voted" : "Not voted"}
-                </div>
               </div>
+
+              <h2 className="text-3xl font-black">{event.name}</h2>
+              {event.description ? (
+                <p className="mt-3 font-bold">{event.description}</p>
+              ) : null}
 
               <div className="mt-6">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -235,7 +230,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                       <button
                         key={`${choice}-${choiceIndex}`}
                         disabled={isPending || eventExpired}
-                        className={`border-[3px] border-black px-4 py-3 text-left text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60 ${
+                        className={`cursor-pointer border-[3px] border-black px-4 py-3 text-left text-lg font-black shadow-[5px_5px_0_#111] disabled:opacity-60 ${
                           hasVotedChoice ? "bg-[#7dff7a]" : "bg-[#5dc9ff]"
                         }`}
                         onClick={() =>
@@ -266,9 +261,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                       key={choice.choiceIndex}
                       className="border-[3px] border-black bg-[#fff7e6] p-3"
                     >
-                      <p className="font-black">
-                        #{choice.choiceIndex} · {choice.choiceText}
-                      </p>
+                      <p className="font-black">{choice.choiceText}</p>
                       {choice.voters.length === 0 ? (
                         <p className="mt-2 text-sm font-bold uppercase opacity-70">
                           No one selected this option yet
@@ -278,7 +271,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                           {choice.voters.map((voter) => (
                             <span
                               key={voter.id}
-                              className="border-[2px] border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
+                              className="border-2 border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
                             >
                               {voter.username}
                             </span>
