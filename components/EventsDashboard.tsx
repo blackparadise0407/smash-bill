@@ -162,8 +162,8 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
   if (isLoading) {
     return (
       <section className="brutal-card bg-[#fff7e6] p-6">
-        <h2 className="text-3xl font-black">Loading schedule...</h2>
-        <p className="mt-3 font-bold">Fetching events from Neon Postgres.</p>
+        <h2 className="text-3xl font-black">Loading court schedule...</h2>
+        <p className="mt-3 font-bold">Fetching the latest badminton rally votes.</p>
       </section>
     );
   }
@@ -178,7 +178,10 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
 
       {events.length === 0 ? (
         <div className="brutal-card bg-[#fff7e6] p-6">
-          <h2 className="text-3xl font-black">No events yet</h2>
+          <h2 className="text-3xl font-black">No rallies on the board</h2>
+          <p className="rally-hint mt-4 p-3 font-black uppercase">
+            Ask an admin to set the next badminton court-time vote.
+          </p>
         </div>
       ) : null}
 
@@ -242,8 +245,8 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                         <span className="block">{choice}</span>
                         <span className="mt-1 block text-sm uppercase">
                           {hasVotedChoice
-                            ? "Selected · click to remove"
-                            : "Click to select"}
+                            ? "Selected · tap to drop"
+                            : "Smash to select"}
                         </span>
                       </button>
                     );
@@ -253,7 +256,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
 
               <section className="mt-6 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
                 <h3 className="text-2xl font-black">
-                  Who voted for each option?
+                  Who is ready for each court?
                 </h3>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {event.vote_breakdown.map((choice) => (
@@ -269,7 +272,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
                       </p>
                       {choice.voters.length === 0 ? (
                         <p className="mt-2 text-sm font-bold uppercase opacity-70">
-                          No one selected this option yet
+                          No players on this court yet
                         </p>
                       ) : (
                         <div className="mt-2 flex flex-wrap gap-2">
