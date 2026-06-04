@@ -185,7 +185,8 @@ export default function AdminEventsCreator() {
               className="brutal-input w-full resize-y px-4 py-3 text-lg font-bold"
             />
             <span className="rally-hint mt-3 block p-3 text-sm font-black uppercase">
-              Hint: one court-time option per line, up to 10 options, each up to 80 characters.
+              Hint: one court-time option per line, up to 10 options, each up to
+              80 characters.
             </span>
           </label>
         </div>
@@ -266,53 +267,11 @@ export default function AdminEventsCreator() {
                     ) : null}
                   </div>
                   <h3 className="text-2xl font-black">{event.name}</h3>
-                  {event.description ? (
-                    <p className="mt-2 font-bold">{event.description}</p>
-                  ) : null}
                 </div>
                 <span className="border-[3px] border-black bg-[#ff9f1c] px-3 py-2 font-black shadow-[4px_4px_0_#111]">
                   {event.voter_count} voters
                 </span>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {event.choices.map((choice, choiceIndex) => (
-                  <span
-                    key={`${choice}-${choiceIndex}`}
-                    className="border-[3px] border-black bg-white px-3 py-1 font-black shadow-[3px_3px_0_#111]"
-                  >
-                    {choice}
-                  </span>
-                ))}
-              </div>
-              <section className="mt-5 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
-                <h4 className="text-xl font-black">Voters by option</h4>
-                <div className="mt-3 grid gap-3">
-                  {event.vote_breakdown.map((choice) => (
-                    <div
-                      key={choice.choiceIndex}
-                      className="border-[3px] border-black bg-[#fff7e6] p-3"
-                    >
-                      <p className="font-black">{choice.choiceText}</p>
-                      {choice.voters.length === 0 ? (
-                        <p className="mt-2 text-sm font-bold uppercase opacity-70">
-                          No one selected this option yet
-                        </p>
-                      ) : (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {choice.voters.map((voter) => (
-                            <span
-                              key={voter.id}
-                              className="border-2 border-black bg-[#ff9f1c] px-2 py-1 text-sm font-black"
-                            >
-                              {voter.username}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <a
                   className="border-[3px] border-black bg-[#5dc9ff] px-4 py-3 text-center font-black shadow-[4px_4px_0_#111]"
