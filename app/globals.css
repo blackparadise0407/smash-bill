@@ -22,10 +22,12 @@ html {
 body {
   min-height: 100vh;
   background:
+    radial-gradient(circle at 12% 18%, rgba(255, 95, 183, 0.22) 0 90px, transparent 92px),
+    radial-gradient(circle at 88% 12%, rgba(93, 201, 255, 0.24) 0 120px, transparent 122px),
     linear-gradient(90deg, rgba(17, 17, 17, 0.08) 1px, transparent 1px),
     linear-gradient(rgba(17, 17, 17, 0.08) 1px, transparent 1px),
     var(--background);
-  background-size: 28px 28px;
+  background-size: auto, auto, 28px 28px, 28px 28px, auto;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -70,4 +72,64 @@ body {
 
 .brutal-input:focus {
   background: #fffbd1;
+}
+
+.court-card {
+  --court-line: rgba(255, 255, 255, 0.86);
+  --court-surface: #16845f;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 24%, rgba(125, 255, 122, 0.28), transparent 30%),
+    linear-gradient(135deg, #0f6f55, var(--court-surface) 55%, #0a5a47);
+}
+
+.court-card::before {
+  position: absolute;
+  inset: 16px;
+  pointer-events: none;
+  content: "";
+  border: 4px solid var(--court-line);
+  background:
+    linear-gradient(90deg, transparent 11%, var(--court-line) 11% calc(11% + 3px), transparent calc(11% + 3px) 89%, var(--court-line) 89% calc(89% + 3px), transparent calc(89% + 3px)),
+    linear-gradient(90deg, transparent calc(50% - 2px), var(--court-line) calc(50% - 2px) calc(50% + 2px), transparent calc(50% + 2px)),
+    linear-gradient(0deg, transparent 16%, var(--court-line) 16% calc(16% + 3px), transparent calc(16% + 3px) 84%, var(--court-line) 84% calc(84% + 3px), transparent calc(84% + 3px)),
+    linear-gradient(0deg, transparent 38%, var(--court-line) 38% calc(38% + 3px), transparent calc(38% + 3px) 50%, var(--court-line) 50% calc(50% + 5px), transparent calc(50% + 5px) 62%, var(--court-line) 62% calc(62% + 3px), transparent calc(62% + 3px));
+  opacity: 0.9;
+}
+
+.court-card::after {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  left: 14px;
+  height: 10px;
+  pointer-events: none;
+  content: "";
+  background: repeating-linear-gradient(90deg, rgba(17, 17, 17, 0.5) 0 8px, transparent 8px 16px);
+  border-top: 3px solid rgba(17, 17, 17, 0.52);
+  border-bottom: 3px solid rgba(17, 17, 17, 0.52);
+  transform: translateY(-50%);
+}
+
+.court-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.shuttle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.shuttle-badge::before {
+  content: "🏸";
+  filter: drop-shadow(2px 2px 0 rgba(17, 17, 17, 0.45));
+}
+
+.rally-hint {
+  border: 3px dashed var(--ink);
+  background: #fffbd1;
+  box-shadow: 4px 4px 0 var(--ink);
 }
