@@ -163,7 +163,9 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
     return (
       <section className="brutal-card bg-[#fff7e6] p-6">
         <h2 className="text-3xl font-black">Loading court schedule...</h2>
-        <p className="mt-3 font-bold">Fetching the latest badminton rally votes.</p>
+        <p className="mt-3 font-bold">
+          Fetching the latest badminton rally votes.
+        </p>
       </section>
     );
   }
@@ -255,9 +257,7 @@ export default function EventsDashboard({ device }: EventsDashboardProps) {
               </div>
 
               <section className="mt-6 border-[3px] border-black bg-white p-4 shadow-[4px_4px_0_#111]">
-                <h3 className="text-2xl font-black">
-                  Who is ready for each court?
-                </h3>
+                <h3 className="text-2xl font-black">Who is ready?</h3>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {event.vote_breakdown.map((choice) => (
                     <div
