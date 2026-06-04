@@ -185,7 +185,8 @@ export default function AdminEventsCreator() {
               className="brutal-input w-full resize-y px-4 py-3 text-lg font-bold"
             />
             <span className="rally-hint mt-3 block p-3 text-sm font-black uppercase">
-              Hint: one court-time option per line, up to 10 options, each up to 80 characters.
+              Hint: one court-time option per line, up to 10 options, each up to
+              80 characters.
             </span>
           </label>
         </div>
@@ -292,9 +293,7 @@ export default function AdminEventsCreator() {
                       key={choice.choiceIndex}
                       className="border-[3px] border-black bg-[#fff7e6] p-3"
                     >
-                      <p className="font-black">
-                        #{choice.choiceIndex} · {choice.choiceText}
-                      </p>
+                      <p className="font-black">{choice.choiceText}</p>
                       {choice.voters.length === 0 ? (
                         <p className="mt-2 text-sm font-bold uppercase opacity-70">
                           No one selected this option yet
